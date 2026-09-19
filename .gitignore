@@ -1,0 +1,124 @@
+# ============================================================
+# 阅读的海洋 · The sea of reading
+# 忽略规则：敏感信息一律不进仓库
+# ============================================================
+
+# ---------- 1. 环境变量 / 密钥 / 证书 ----------
+.env
+.env.*
+!.env.example
+*.env
+
+secrets.*
+*secret*
+*credential*
+credentials.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.jks
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+*.token
+*.apikey
+serviceAccount*.json
+firebase-adminsdk*.json
+
+# 包管理器/镜像源配置里常带明文令牌（_authToken）
+.npmrc
+.yarnrc.yml
+.pnpmrc
+.pip.conf
+.gem/credentials
+
+# 可能内含密钥/地址的命名变体
+# 若某文件确实要跟踪，用 git add -f <文件名> 强制加入
+*.prod.js
+*.prod.json
+*.production.js
+*.production.json
+*.local.js
+*.local.json
+
+# ---------- 2. 依赖目录 ----------
+node_modules/
+jspm_packages/
+bower_components/
+vendor/
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+.python-version
+site-packages/
+
+# ---------- 3. 本地数据库文件 ----------
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+*.mdb
+*.accdb
+*.ldb
+*.realm
+*.realm.lock
+dump.rdb
+*.rdb
+*.sql.gz
+*.bak
+# SQLite 的伴生文件，和主库一样不能进仓库
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+*.db-wal
+*.db-shm
+
+# ---------- 4. 构建产物 / 缓存 ----------
+dist/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+.temp/
+coverage/
+*.tsbuildinfo
+.parcel-cache/
+.vercel/
+.turbo/
+.output/
+.firebase/
+
+# ---------- 5. 日志 ----------
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---------- 6. 编辑器 / 系统 ----------
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- 7. 本地工具配置 ----------
+.eslintcache
+.dockerenv
+.local
+
+# WorkBuddy 的工作数据（含会话记忆、本地路径等，不入库）
+.workbuddy/
