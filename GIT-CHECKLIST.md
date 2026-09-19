@@ -15,10 +15,14 @@
 | npm | ✅ 10.9.7 |
 | Python | ✅ 3.13.14 |
 | 本地仓库 | ✅ 已初始化，分支 `main` |
-| 远程仓库 origin | ✅ 已指向 `https://github.com/XingHo-VibeCoding/The-sea-of-reading.git` |
+| 远程仓库 origin | ✅ 已指向 `git@github.com:XingHo-VibeCoding/The-sea-of-reading.git`（SSH 方式，自动走 443 端口） |
 | 提交身份 | ✅ `张俊 <1145282165@qq.com>` |
 | `.gitignore` | ✅ 已就绪，规则已实测生效 |
 | 首次提交 | ✅ 已完成（commit `db0de6d`） |
+| 推送 | ✅ 已完成，2 个提交（`db0de6d`、`bfd7ddd`），本地与远端一致 |
+
+> **实际采用的是方案 B（SSH）。** 下面两套方案都保留作为学习材料，
+> 但你机器上已经配好了 SSH，日常直接用「第五节·每天三连」即可。
 
 **结论：不需要安装任何东西。** 工具全部齐备，没有"缺失项"。
 
@@ -39,7 +43,7 @@ CRYPT_E_NO_REVOCATION_CHECK (0x80092012) - 吊销功能无法检查证书是否�
 
 ---
 
-## 二、你现在要做的：把代码推上去（二选一）
+## 二、推送方式（已采用方案 B / SSH，本节保留作学习材料）
 
 ### 方案 A：HTTPS（推荐，最简单）
 
@@ -121,14 +125,14 @@ git push -u origin main
 
 浏览器打开 `https://github.com/XingHo-VibeCoding/The-sea-of-reading`，确认：
 
-- [ ] 能看到 **`README.md`** 和 **`.gitignore`** 两个文件
-- [ ] 右上角显示分支 **`main`**、提交数 **1 Commit**
-- [ ] **看不到** `.env` / `secrets.json` / `*.key` / `*.db` / `node_modules/` 任何一样
+- [x] 能看到 **`README.md`**、**`.gitignore`**、**`GIT-CHECKLIST.md`** 三个文件
+- [x] 右上角显示分支 **`main`**、提交数 **2 Commits**
+- [x] **看不到** `.env` / `secrets.json` / `*.key` / `*.db` / `node_modules/` 任何一样
 
 命令行也能自查（比网页更可靠）：
 
 ```bash
-git ls-files                      # 列出所有被跟踪的文件，应该只有 2 个
+git ls-files                      # 列出所有被跟踪的文件，应该只有 3 个
 git check-ignore -v .env app.db   # 显示"是哪条规则把它挡住的"
 ```
 
@@ -188,6 +192,12 @@ GIT_SSL_NO_VERIFY=1 git push -u origin main
 ```
 
 只作为临时救急。长期还是建议：推 GitHub 时关掉 Watt Toolkit，或者干脆走方案 B 的 SSH。
+
+**Q：SSH 以后还要再配一次吗？**
+A：不用，一次配好长期有效。现状：
+- 公钥已登记到 GitHub 个人账号 **`ZJ431`**（不是组织账号 `XingHo-VibeCoding`，组织账号存不了个人 SSH 公钥）；
+- `~/.ssh/config` 里已配好 `github.com → ssh.github.com:443` 转发（校园网封了 22 端口，必须走 443）；
+- 远程地址已切成 `git@github.com:...`，**Watt Toolkit 开着也不影响推送**，不用再关它。
 
 **Q：`.env.example` 是什么？**
 A：给队友看的"配置模板"，只写键名不写真值（`DB_HOST=`、`API_KEY=`），可以放心提交；
