@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>阅读的海洋 · The Sea of Reading</title>
+<meta name="description" content="阅读的海洋 —— 一个记录读书笔记与阅读进度的个人项目。当前为占位页。">
+<style>
+  :root {
+    --ink:        #0f2438;
+    --ink-soft:   #47607a;
+    --ink-faint:  #8296aa;
+    --sea:        #1b6fa8;
+    --sea-deep:   #0d4a75;
+    --sea-tint:   #eaf3fa;
+    --line:       #d8e6f0;
+    --paper:      #ffffff;
+    --bg:         #f6fafd;
+    --radius:     14px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB",
+                 "Source Han Sans SC", "Noto Sans CJK SC", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 22px 64px;
+  }
+
+  /* ---------- 顶部 ---------- */
+  .hero {
+    background: linear-gradient(150deg, var(--sea-deep) 0%, var(--sea) 62%, #2f8fc4 100%);
+    color: #fff;
+    padding: 56px 22px 60px;
+    text-align: center;
+  }
+
+  .hero-inner { max-width: 760px; margin: 0 auto; }
+
+  .badge {
+    display: inline-block;
+    font-size: 12.5px;
+    letter-spacing: .06em;
+    padding: 5px 13px;
+    border: 1px solid rgba(255, 255, 255, .45);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .12);
+    margin-bottom: 22px;
+  }
+
+  .hero h1 {
+    margin: 0;
+    font-size: 40px;
+    line-height: 1.25;
+    letter-spacing: .04em;
+    font-weight: 600;
+  }
+
+  .hero .en {
+    display: block;
+    margin-top: 10px;
+    font-size: 14px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    opacity: .78;
+    font-weight: 400;
+  }
+
+  .hero p.tagline {
+    margin: 20px auto 0;
+    max-width: 480px;
+    font-size: 15.5px;
+    opacity: .9;
+  }
+
+  /* ---------- 卡片 ---------- */
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 26px 28px;
+    margin-top: 22px;
+  }
+
+  .card:first-of-type { margin-top: -30px; }
+
+  .card h2 {
+    margin: 0 0 14px;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--sea-deep);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .card h2::before {
+    content: "";
+    width: 4px;
+    height: 16px;
+    border-radius: 2px;
+    background: var(--sea);
+    flex: none;
+  }
+
+  .card p { margin: 0 0 12px; color: var(--ink-soft); font-size: 15px; }
+  .card p:last-child { margin-bottom: 0; }
+
+  /* ---------- 状态条 ---------- */
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14.5px;
+    color: var(--sea-deep);
+    background: var(--sea-tint);
+    border: 1px solid #c9e2f3;
+    border-radius: 10px;
+    padding: 11px 15px;
+  }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #f0a020;
+    flex: none;
+    box-shadow: 0 0 0 3px rgba(240, 160, 32, .18);
+  }
+
+  /* ---------- 列表 ---------- */
+  ul.plain { margin: 0; padding: 0; list-style: none; }
+
+  ul.plain li {
+    position: relative;
+    padding: 9px 0 9px 24px;
+    border-bottom: 1px dashed var(--line);
+    font-size: 15px;
+    color: var(--ink-soft);
+  }
+
+  ul.plain li:last-child { border-bottom: none; padding-bottom: 0; }
+
+  ul.plain li::before {
+    content: "";
+    position: absolute;
+    left: 2px; top: 17px;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--sea);
+    opacity: .55;
+  }
+
+  ul.plain li.done { color: var(--ink-faint); }
+  ul.plain li.done::before { background: #35a06a; opacity: .85; }
+
+  ul.plain li b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- 代码 ---------- */
+  code {
+    font-family: "Cascadia Mono", Consolas, "SFMono-Regular", Menlo, monospace;
+    font-size: 13.5px;
+    background: var(--sea-tint);
+    color: var(--sea-deep);
+    padding: 2px 6px;
+    border-radius: 5px;
+  }
+
+  /* ---------- 页脚 ---------- */
+  footer {
+    margin-top: 34px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-size: 13px;
+    color: var(--ink-faint);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  footer a { color: var(--sea); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 520px) {
+    .hero { padding: 42px 18px 52px; }
+    .hero h1 { font-size: 30px; }
+    .hero .en { font-size: 12px; letter-spacing: .16em; }
+    .card { padding: 22px 20px; }
+    .card:first-of-type { margin-top: -24px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <span class="badge">Day 2 · 占位页</span>
+    <h1>阅读的海洋
+      <span class="en">The Sea of Reading</span>
+    </h1>
+    <p class="tagline">记录读过的每一本书，也记录读它的那段时光。</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section class="card">
+    <h2>当前状态</h2>
+    <div class="status">
+      <span class="dot"></span>
+      <span>项目骨架已就位，功能尚未开始 —— 这是一个占位页，正式版本将在 <b>Day 7</b> 上线。</span>
+    </div>
+    <p style="margin-top:14px">
+      你看到这个页面，说明仓库、提交、推送三条链路已经全部打通。
+      页面本身现在没有交互功能，它的作用是证明「代码能从本机走到 GitHub，也能从 GitHub 变成网页」。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>这个项目想做什么</h2>
+    <ul class="plain">
+      <li><b>书单管理</b> —— 把想读的、在读的、读完的分开摆放</li>
+      <li><b>阅读进度</b> —— 记下每次读到哪一页，不用再靠书签猜</li>
+      <li><b>读书笔记</b> —— 摘抄、随想、评分，都留在一处</li>
+      <li><b>阅读统计</b> —— 一个月读了几本、平均多久读完一本</li>
+    </ul>
+    <p style="margin-top:14px">
+      以上都是计划，不是现状。功能会按学习计划逐日补齐，避免贪多。
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>进度</h2>
+    <ul class="plain">
+      <li class="done">本地 Git 仓库初始化、忽略规则配置</li>
+      <li class="done">GitHub 远程仓库连接、SSH 推送通道打通</li>
+      <li class="done">首次提交与推送，页面文件上线</li>
+      <li>Day 7 —— 做出可用的 MVP 页面</li>
+      <li>Day 23 —— 接入数据库配置（<code>.env</code> 届时才会用到）</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>关于本地运行</h2>
+    <p>
+      这是一个纯静态页面，没有任何依赖，也不需要构建工具。直接双击
+      <code>index.html</code> 就能在浏览器里打开。
+    </p>
+    <p>
+      以后如果需要本地起一个服务，在项目目录下执行 <code>npx serve</code> 即可。
+    </p>
+  </section>
+
+  <footer>
+    <span>阅读的海洋 · 占位页</span>
+    <span>张俊 · <a href="https://github.com/XingHo-VibeCoding">@XingHo-VibeCoding</a></span>
+  </footer>
+
+</div>
+
+</body>
+</html>
