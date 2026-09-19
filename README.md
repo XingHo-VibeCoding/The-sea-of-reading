@@ -68,7 +68,9 @@ The sea of reading/
     ├── Day-02.md
     ├── Day-03.md
     └── assets/
-        └── Day-02-repo-home.png
+        ├── Day-02-repo-home.png
+        ├── Day-03-research-compare.jpg
+        └── Day-03-research-not-doing.png
 ```
 
 ## 技术栈
