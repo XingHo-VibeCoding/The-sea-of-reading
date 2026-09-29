@@ -1,0 +1,266 @@
+/* ============================================================================
+ * styles.css —— 阅读的海洋 全部样式
+ *
+ * 依据 docs/TECH_DESIGN.md 2.6：本项目只有四个文件，样式全在这里，不引外部资源。
+ * 约束（TECH_DESIGN 2.10）：不用 CSS 框架、不用 CDN 字体、不用图标库
+ * —— 所以图标一律用文字符号（如 ← ），字体只用系统自带。
+ * ========================================================================== */
+
+:root {
+  --paper:      #f6f4f1;   /* 页面底色，偏暖的纸感 */
+  --card:       #ffffff;
+  --ink:        #22262b;   /* 主文字 */
+  --ink-soft:   #5c6672;   /* 次要文字 */
+  --ink-faint:  #8b95a1;   /* 更弱的说明文字 */
+  --line:       #e4dfd8;   /* 分隔线 */
+  --accent:     #1f6f6b;   /* 主色：墨绿 */
+  --accent-dk:  #175450;
+  --accent-bg:  #e8f2f1;
+  --danger:     #b3261e;
+  --danger-bg:  #fdecea;
+  --radius:     10px;
+  --shadow:     0 1px 2px rgba(34, 38, 43, .06);
+}
+
+* { box-sizing: border-box; }
+
+/* 视图切换靠 hidden 属性；必须加这条，否则 display:flex 会把它盖掉 */
+[hidden] { display: none !important; }
+
+/*
+ * 说明：HTML 里两个 <section> 都带 class="view"，但这里故意**不给它写样式**。
+ * 它是给 app.js 用的钩子（切换视图时统一 document.querySelectorAll('.view')
+ * 然后设 hidden），不是给 CSS 用的。看到它没有样式规则，不是漏写。
+ */
+
+body {
+  margin: 0;
+  padding: 28px 20px 64px;
+  background: var(--paper);
+  color: var(--ink);
+  font: 15px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI",
+        "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
+}
+
+.wrap { max-width: 900px; margin: 0 auto; }
+
+h1 { font-size: 24px; margin: 0; letter-spacing: .5px; }
+h2 { font-size: 21px; margin: 0 0 6px; }
+h3 { font-size: 15px; margin: 0; }
+
+.muted { color: var(--ink-soft); margin: 0; }
+.sub { font-size: 13.5px; margin-top: 2px; }
+
+/* ---------------------------------------------------------------- 顶栏 */
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; flex-wrap: wrap; margin-bottom: 18px;
+}
+.topbar-actions { display: flex; gap: 8px; }
+
+/* ---------------------------------------------------------------- 按钮 */
+
+.btn {
+  font: inherit; font-size: 14px; cursor: pointer;
+  padding: 7px 14px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  transition: background .12s, border-color .12s;
+}
+.btn:hover { background: #f1efec; }
+
+.btn-primary {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
+.btn-primary:hover { background: var(--accent-dk); border-color: var(--accent-dk); }
+
+.btn-ghost { border-color: transparent; background: transparent; color: var(--ink-soft); }
+.btn-ghost:hover { background: #ece9e5; color: var(--ink); }
+
+.btn-danger { color: var(--danger); border-color: #eccac6; background: #fff; }
+.btn-danger:hover { background: var(--danger-bg); }
+
+.btn-row { display: flex; gap: 8px; }
+
+/* 小号按钮：用在笔记条目里 */
+.btn-sm { padding: 3px 10px; font-size: 13px; border-radius: 6px; }
+
+/* ---------------------------------------------------------------- 筛选项 */
+
+.filters { display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; }
+.filter {
+  font: inherit; font-size: 14px; cursor: pointer;
+  padding: 5px 14px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--card); color: var(--ink-soft);
+}
+.filter:hover { background: #f1efec; }
+.filter.is-active {
+  background: var(--accent-bg); border-color: var(--accent); color: var(--accent-dk);
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------- 书单卡片列表 */
+
+.book-list {
+  display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.book-card {
+  display: flex; gap: 14px; align-items: flex-start;
+  padding: 14px; cursor: pointer;
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  transition: border-color .12s, transform .12s;
+}
+.book-card:hover { border-color: #cfc8bf; transform: translateY(-1px); }
+
+.book-card-body { min-width: 0; flex: 1; }
+
+.book-title {
+  font-size: 16px; font-weight: 600; margin: 0 0 2px;
+  overflow-wrap: anywhere;
+}
+.book-author { font-size: 13px; color: var(--ink-soft); margin: 0 0 8px; }
+
+/* ---------------------------------------------------------------- 封面与首字占位 */
+
+.cover {
+  flex: none; overflow: hidden;
+  width: 72px; height: 100px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px; font-weight: 600; color: #fff;
+  background: linear-gradient(145deg, #4a8f8a, #1f6f6b);
+  user-select: none;
+}
+.cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.cover-lg { width: 132px; height: 186px; font-size: 54px; border-radius: 8px; }
+
+/* ---------------------------------------------------------------- 状态标签 */
+
+.badge {
+  display: inline-block; font-size: 12px; line-height: 1.6;
+  padding: 1px 9px; border-radius: 999px; border: 1px solid;
+}
+.badge-want     { color: #7a6a4f; background: #f6f0e4; border-color: #e6dcc8; }
+.badge-reading  { color: var(--accent-dk); background: var(--accent-bg); border-color: #cfe3e1; }
+.badge-finished { color: #2f6b3a; background: #e9f4ea; border-color: #cfe4d2; }
+
+/* ---------------------------------------------------------------- 进度条 */
+
+.progress-line { font-size: 13px; color: var(--ink-soft); margin: 8px 0 0; }
+
+.bar { height: 5px; border-radius: 999px; background: #eae6e1; margin-top: 6px; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--accent); border-radius: 999px; }
+
+/* ---------------------------------------------------------------- 空状态 */
+
+.empty {
+  padding: 54px 24px; text-align: center;
+  background: var(--card); border: 1px dashed #d9d3cb; border-radius: var(--radius);
+}
+.empty-title { font-size: 17px; font-weight: 600; margin: 0 0 4px; }
+.empty .btn { margin-top: 16px; }
+
+/* ---------------------------------------------------------------- 出错提示条 */
+
+.app-error {
+  max-width: 900px; margin: 0 auto 16px;
+  padding: 11px 16px; border-radius: var(--radius);
+  background: var(--danger-bg); border: 1px solid #eccac6; color: #8c1d18;
+  font-size: 14px;
+}
+
+/* ---------------------------------------------------------------- 卡片盒子（详情页用）*/
+
+.box {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 18px; margin-top: 16px;
+}
+.box-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 12px;
+}
+.box-title { font-weight: 600; }
+
+/* ---------------------------------------------------------------- 详情页头部 */
+
+.detail-head { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+.detail-meta { min-width: 0; flex: 1; }
+.detail-meta h2 { overflow-wrap: anywhere; }
+
+.status-switch { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+.status-switch .btn.is-active {
+  background: var(--accent-bg); border-color: var(--accent);
+  color: var(--accent-dk); font-weight: 600;
+}
+
+/* ---------------------------------------------------------------- 进度录入 */
+
+.progress-view { font-size: 15px; margin: 10px 0 14px; }
+.progress-view strong { font-size: 21px; }
+.progress-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.progress-form .bar { width: 100%; margin-top: 2px; }
+
+.field-inline { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink-soft); }
+
+input[type="text"], input[type="number"], textarea {
+  font: inherit; font-size: 14px; color: var(--ink);
+  padding: 6px 9px; border: 1px solid var(--line); border-radius: 7px;
+  background: #fff;
+}
+input[type="number"] { width: 84px; }
+input:focus, textarea:focus { outline: 2px solid #cfe3e1; outline-offset: 0; border-color: var(--accent); }
+textarea { width: 100%; resize: vertical; }
+
+/* ---------------------------------------------------------------- 笔记 */
+
+.note-editor { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.note-editor-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-top: 10px; flex-wrap: wrap;
+}
+
+.note-list { list-style: none; margin: 0; padding: 0; }
+.note-item { padding: 13px 0; border-top: 1px solid var(--line); }
+.note-item:first-child { border-top: none; }
+.note-body { margin: 0 0 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.note-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.note-meta { font-size: 12.5px; color: var(--ink-faint); }
+
+/* ---------------------------------------------------------------- 弹窗 */
+
+.modal {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; background: rgba(34, 38, 43, .45);
+}
+.modal-card {
+  width: 100%; max-width: 420px; max-height: 88vh; overflow: auto;
+  background: var(--card); border-radius: 12px; padding: 22px;
+  box-shadow: 0 10px 34px rgba(34, 38, 43, .22);
+}
+.modal-card h2 { margin-bottom: 16px; }
+
+.field { display: block; margin-bottom: 14px; font-size: 14px; color: var(--ink-soft); }
+.field input { display: block; width: 100%; margin-top: 5px; }
+.req { color: var(--danger); }
+
+.form-error {
+  margin: 0 0 14px; padding: 9px 12px; font-size: 13.5px;
+  background: var(--danger-bg); border: 1px solid #eccac6;
+  border-radius: 7px; color: #8c1d18;
+}
+
+.modal-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+/* ---------------------------------------------------------------- 窄屏 */
+
+@media (max-width: 560px) {
+  body { padding: 18px 14px 48px; }
+  .book-list { grid-template-columns: 1fr; }
+  .cover-lg { width: 96px; height: 136px; font-size: 40px; }
+  h1 { font-size: 20px; }
+}
