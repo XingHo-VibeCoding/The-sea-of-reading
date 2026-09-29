@@ -1,0 +1,212 @@
+/* ============================================================================
+ * home.css —— 主视图（三栏看板）的全部样式
+ *
+ * 依据 docs/day8-prompt.md 第三节「视觉要求」：
+ *   层级清楚 / 卡片可扫描 / 桌面三栏并排且不横向滚动 / 手机纵向堆叠且不溢出
+ *   零外部资源（无 CDN 字体、无图标库），只用系统自带字体
+ *
+ * 注意：变量沿用 styles.css 那一套（暖纸底 + 墨绿主色），不另起一套配色。
+ *       但本文件要能独立工作，所以 :root 里重新声明一遍。
+ * ========================================================================== */
+
+:root {
+  --paper:      #f6f4f1;   /* 页面底色，偏暖的纸感 */
+  --card:       #ffffff;
+  --ink:        #22262b;   /* 主文字 */
+  --ink-soft:   #5c6672;   /* 次要文字 */
+  --ink-faint:  #8b95a1;   /* 更弱的说明文字 */
+  --line:       #e4dfd8;   /* 分隔线 */
+  --accent:     #1f6f6b;   /* 主色：墨绿 */
+  --accent-dk:  #175450;
+  --accent-bg:  #e8f2f1;
+  --radius:     10px;
+  --shadow:     0 1px 2px rgba(34, 38, 43, .06);
+}
+
+* { box-sizing: border-box; }
+
+/* 四态切换靠 hidden 属性；必须加这条，否则 display:grid 会把它盖掉 */
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  padding: 28px 20px 64px;
+  background: var(--paper);
+  color: var(--ink);
+  font: 15px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI",
+        "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
+}
+
+/* ---------------------------------------------------------------- 顶部 */
+
+.page-head { max-width: 1060px; margin: 0 auto 20px; }
+
+.page-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+
+.page-updated {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+
+.page-body { max-width: 1060px; margin: 0 auto; }
+
+/* ------------------------------------------------- 三栏（桌面并排 / 手机堆叠） */
+
+.columns {
+  display: grid;
+  /* minmax(0, 1fr) 而不是 1fr：防止某一栏里出现长内容时把整行撑宽 */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.column {
+  min-width: 0;                 /* 同上，防溢出 */
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 16px 12px;
+}
+
+.column-title {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--accent);
+}
+
+/* ---------------------------------------------------------------- 一条书 */
+
+.book-list { list-style: none; margin: 0; padding: 0; }
+
+.book-row {
+  display: grid;
+  grid-template-columns: 18px 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.book-row:first-child { border-top: 0; }
+
+/* 序号 —— 只是个"看得见的顺序"，不是数据里的 id */
+.row-index {
+  font-size: 13px;
+  color: var(--ink-faint);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 封面位：有网址就放图，没有就显示书名第一个字 */
+.row-cover {
+  width: 40px;
+  height: 56px;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(150deg, #4a8f8a, #1f6f6b);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 600;
+  user-select: none;
+}
+.row-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.row-main { min-width: 0; }
+
+.row-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;      /* 长书名换行，不撑破卡片 */
+}
+
+.row-author {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+/* 右侧的进度：在读显示百分比；已读「已读完」；想读「未开始」 */
+.row-progress {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.row-progress.is-none { color: var(--ink-faint); font-weight: 400; }
+
+/* 栏底：超出 5 条的提示 / 本栏为空时的占位 */
+.column-more,
+.column-none {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+/* --------------------------------------------------------- 加载 / 空 / 错误 */
+
+.state {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 52px 20px;
+  text-align: center;
+}
+
+.state-title {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.state-line {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.btn {
+  margin-top: 16px;
+  padding: 8px 22px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.btn:hover { background: var(--accent-dk); border-color: var(--accent-dk); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------------------------------------------------------------- 手机宽度 */
+
+@media (max-width: 480px) {
+  body { padding: 18px 14px 40px; }
+
+  .page-title { font-size: 20px; }
+
+  /* 三栏改成从上到下堆叠（想读 → 在读 → 已读） */
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+}

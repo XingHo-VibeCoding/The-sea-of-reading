@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>阅读的海洋 · 我的书架</title>
+
+  <!--
+    这份页面是「主视图」：按阅读状态分成三栏，用来看清手上的书都到什么程度了。
+    依据 docs/day8-prompt.md（生成提示词）与 docs/PRD.md 4.2（书籍字段）。
+
+    三种状态各有什么，写在 home.js 里，这里只负责结构。
+    本文件不引用任何外部资源（无 CDN 字体 / 图标 / 图片 / 框架）。
+  -->
+  <link rel="stylesheet" href="home.css">
+</head>
+<body>
+
+  <header class="page-head">
+    <h1 class="page-title">阅读的海洋</h1>
+    <p class="page-updated" id="updated-at"></p>
+  </header>
+
+  <main class="page-body">
+
+    <!-- 状态一 · 加载中：数据还没到 -->
+    <section class="state" id="state-loading">
+      <p class="state-line" id="loading-text">正在读取你的书架…</p>
+    </section>
+
+    <!-- 状态二 · 成功：三栏并列 -->
+    <section class="columns" id="state-success" hidden>
+
+      <div class="column">
+        <h2 class="column-title">想读</h2>
+        <ol class="book-list" id="list-want"></ol>
+        <p class="column-more" id="more-want" hidden></p>
+        <p class="column-none" id="none-want" hidden>还没有想读的书</p>
+      </div>
+
+      <div class="column">
+        <h2 class="column-title">在读</h2>
+        <ol class="book-list" id="list-reading"></ol>
+        <p class="column-more" id="more-reading" hidden></p>
+        <p class="column-none" id="none-reading" hidden>还没有在读的书</p>
+      </div>
+
+      <div class="column">
+        <h2 class="column-title">已读</h2>
+        <ol class="book-list" id="list-finished"></ol>
+        <p class="column-more" id="more-finished" hidden></p>
+        <p class="column-none" id="none-finished" hidden>还没有读完的书</p>
+      </div>
+
+    </section>
+
+    <!-- 状态三 · 空：一本书都没有 -->
+    <section class="state" id="state-empty" hidden>
+      <p class="state-title">书架还是空的</p>
+      <p class="state-line">先把想读的书放进来，这里就会热闹起来。</p>
+    </section>
+
+    <!-- 状态四 · 错误：取数据失败 -->
+    <section class="state" id="state-error" hidden>
+      <p class="state-title">没能读到你的书架</p>
+      <p class="state-line" id="error-text"></p>
+      <button class="btn" id="btn-retry" type="button">重试</button>
+    </section>
+
+  </main>
+
+  <!-- 普通 script，不用 ES Module（本页要能双击直接打开） -->
+  <script src="home.js"></script>
+
+</body>
+</html>
