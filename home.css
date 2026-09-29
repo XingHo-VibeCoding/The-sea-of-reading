@@ -14,7 +14,7 @@
   --card:       #ffffff;
   --ink:        #22262b;   /* 主文字 */
   --ink-soft:   #5c6672;   /* 次要文字 */
-  --ink-faint:  #8b95a1;   /* 更弱的说明文字 */
+  --ink-faint:  #5f6a76;   /* 更弱的说明文字（加深后 ≥4.5:1，原先 #8b95a1 只有 2.77） */
   --line:       #e4dfd8;   /* 分隔线 */
   --accent:     #1f6f6b;   /* 主色：墨绿 */
   --accent-dk:  #175450;
@@ -113,7 +113,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(150deg, #4a8f8a, #1f6f6b);
+  background: linear-gradient(150deg, #3a7a76, #1f6f6b);   /* 浅端加深过：白字对比 3.76 → 4.97 */
   color: #fff;
   font-size: 17px;
   font-weight: 600;
@@ -199,7 +199,7 @@ body {
 
 /* ---------------------------------------------------------------- 手机宽度 */
 
-@media (max-width: 480px) {
+@media (max-width: 560px) {   /* 与 styles.css 的窄屏断点统一（原先 480，两页不一致） */
   body { padding: 18px 14px 40px; }
 
   .page-title { font-size: 20px; }

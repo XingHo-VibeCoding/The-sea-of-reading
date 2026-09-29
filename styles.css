@@ -11,7 +11,7 @@
   --card:       #ffffff;
   --ink:        #22262b;   /* 主文字 */
   --ink-soft:   #5c6672;   /* 次要文字 */
-  --ink-faint:  #8b95a1;   /* 更弱的说明文字 */
+  --ink-faint:  #5f6a76;   /* 更弱的说明文字（加深后 ≥4.5:1，原先 #8b95a1 只有 2.77） */
   --line:       #e4dfd8;   /* 分隔线 */
   --accent:     #1f6f6b;   /* 主色：墨绿 */
   --accent-dk:  #175450;
@@ -49,7 +49,7 @@ h2 { font-size: 21px; margin: 0 0 6px; }
 h3 { font-size: 15px; margin: 0; }
 
 .muted { color: var(--ink-soft); margin: 0; }
-.sub { font-size: 13.5px; margin-top: 2px; }
+.sub { font-size: 13px; margin-top: 2px; }
 
 /* ---------------------------------------------------------------- 顶栏 */
 
@@ -79,6 +79,13 @@ h3 { font-size: 15px; margin: 0; }
 
 .btn-danger { color: var(--danger); border-color: #eccac6; background: #fff; }
 .btn-danger:hover { background: var(--danger-bg); }
+
+/* 键盘焦点可见（Tab 键导航时）：与 home.css 的重试按钮同一套规则 */
+.btn:focus-visible,
+.filter:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 
 .btn-row { display: flex; gap: 8px; }
 
@@ -130,7 +137,7 @@ h3 { font-size: 15px; margin: 0; }
   width: 72px; height: 100px; border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
   font-size: 30px; font-weight: 600; color: #fff;
-  background: linear-gradient(145deg, #4a8f8a, #1f6f6b);
+  background: linear-gradient(145deg, #3a7a76, #1f6f6b);   /* 浅端加深过：白字对比 3.76 → 4.97 */
   user-select: none;
 }
 .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -228,7 +235,7 @@ textarea { width: 100%; resize: vertical; }
 .note-item:first-child { border-top: none; }
 .note-body { margin: 0 0 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .note-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.note-meta { font-size: 12.5px; color: var(--ink-faint); }
+.note-meta { font-size: 12px; color: var(--ink-faint); }
 
 /* ---------------------------------------------------------------- 弹窗 */
 
@@ -245,11 +252,11 @@ textarea { width: 100%; resize: vertical; }
 .modal-card h2 { margin-bottom: 16px; }
 
 .field { display: block; margin-bottom: 14px; font-size: 14px; color: var(--ink-soft); }
-.field input { display: block; width: 100%; margin-top: 5px; }
+.field input { display: block; width: 100%; margin-top: 6px; }
 .req { color: var(--danger); }
 
 .form-error {
-  margin: 0 0 14px; padding: 9px 12px; font-size: 13.5px;
+  margin: 0 0 14px; padding: 9px 12px; font-size: 13px;
   background: var(--danger-bg); border: 1px solid #eccac6;
   border-radius: 7px; color: #8c1d18;
 }
@@ -264,3 +271,5 @@ textarea { width: 100%; resize: vertical; }
   .cover-lg { width: 96px; height: 136px; font-size: 40px; }
   h1 { font-size: 20px; }
 }
+
+/* home.css 的窄屏断点与这里保持一致（同为 560px），两个页面行为统一 */
