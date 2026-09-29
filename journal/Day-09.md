@@ -2,7 +2,7 @@
 
 > **日期**：2026-09-29（周二）
 > **主题**：能用的产品和「看起来正经」的产品，差的是这些细节
-> **当日提交**：`（提交后回填）`
+> **当日提交**：`87ad3be`（另有补交 Day 7/8 截图的 `1d90fca`）
 
 ---
 
@@ -88,6 +88,8 @@
 | journal/assets/Day-09-before-home.png（新） | **Day 9** |
 | journal/assets/Day-09-after-index.png（新） | **Day 9** |
 | journal/assets/Day-09-after-home.png（新） | **Day 9** |
+
+> 另：本日还补交了 Day 7 / Day 8 欠的两张打卡截图（`Day-07-mvp-home.png`、`Day-08-mock-home.png`，取自本日「修复前」留证），并把两篇日志的「待补」占位换成真实引用——见提交 `1d90fca`。
 
 ## 七、今日思考（每日一问）
 
