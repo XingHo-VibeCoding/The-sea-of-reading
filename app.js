@@ -180,10 +180,24 @@
 
   /* ---------------------------------------------------------- 视图切换 */
 
+  // 社区视图（Day 11 新增）的 id 列表，切回 list/detail 时要把它们一起藏起来
+  var COMMUNITY_VIEWS = ['view-forum', 'view-post', 'view-messages', 'view-me', 'view-auth'];
+
   function showView(name) {
     el.viewList.hidden = name !== 'list';
     el.viewDetail.hidden = name !== 'detail';
+    // 切到书单/详情时，社区视图全部收起，避免残留
+    for (var i = 0; i < COMMUNITY_VIEWS.length; i++) {
+      var v = byId(COMMUNITY_VIEWS[i]);
+      if (v) v.hidden = true;
+    }
   }
+
+  // 暴露给 community.js：让社区层也能切回「列表/详情」，且不被它自己挡住
+  window.AppViews = {
+    showList: function () { goList(); },
+    showDetail: function (id) { openDetail(id); }
+  };
 
   function goList() {
     state.currentBookId = null;

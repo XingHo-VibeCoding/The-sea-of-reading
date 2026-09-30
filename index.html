@@ -3,14 +3,47 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>阅读的海洋 · 我的读书记录</title>
-<!-- 依据 docs/TECH_DESIGN.md 2.6 / 2.7：单页 + 三视图，显示隐藏切换，不做页面跳转 -->
+<title>阅读的海洋 · 读书记录与交流社区</title>
+<!--
+  Day 11 起：从「个人读书记录」升级为「阅读社区」，顶部加全局导航栏，
+  首页（书架）/ 论坛 / 私信 / 我的 多视图切换。仍用 hidden 切换，不做页面跳转。
+  依据 docs/COMMUNITY_DESIGN.md。
+-->
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <!-- 出错提示条：任何一步操作失败都在这里显示（TECH_DESIGN 3.4 / PRD AC-23） -->
 <div id="app-error" class="app-error" hidden></div>
+<!-- 成功提示条：注册/登录成功等正向反馈（Day 11 Step 3 新增），几秒后自动消失 -->
+<div id="app-success" class="app-success" hidden></div>
+
+<!-- ============================================================
+     全局导航栏（Day 11 新增）
+     COMMUNITY_DESIGN.md 第 11 节：导航栏 + 多页切换。
+     首页=书架、论坛、私信、我的，右侧是登录/注册入口（未登录时）。
+     ============================================================ -->
+<header class="site-nav">
+  <div class="site-nav-inner">
+    <a class="site-brand" href="#" data-nav="home">
+      <span class="site-brand-mark">海</span>
+      <span class="site-brand-text">阅读的海洋</span>
+    </a>
+    <nav class="site-nav-links">
+      <button class="site-nav-link is-active" type="button" data-nav="home">首页</button>
+      <button class="site-nav-link" type="button" data-nav="forum">论坛</button>
+      <button class="site-nav-link" type="button" data-nav="messages">私信</button>
+      <button class="site-nav-link" type="button" data-nav="me">我的</button>
+    </nav>
+    <div class="site-nav-auth">
+      <button id="btn-nav-login" class="btn btn-primary btn-sm" type="button" data-nav="login">登录 / 注册</button>
+      <button id="nav-user" class="nav-user" type="button" data-nav="me" title="进入我的页面" hidden>
+        <span id="nav-user-avatar" class="avatar avatar-sm">海</span>
+        <span id="nav-user-name" class="nav-user-name"></span>
+      </button>
+    </div>
+  </div>
+</header>
 
 <div class="wrap">
 
@@ -128,6 +161,153 @@
 
   </section>
 
+  <!-- ============================================================
+       P4 · 论坛（Day 11 新增）
+       COMMUNITY_DESIGN.md 第 5、6 节：帖子流 + 今日/本周/本月热门。
+       本轮数据先 mock，后端就绪后接真接口。
+       ============================================================ -->
+  <section id="view-forum" class="view" hidden>
+    <header class="topbar">
+      <div>
+        <h1>论坛</h1>
+        <p class="muted sub">分享你正在读的书，聊聊感受</p>
+      </div>
+      <button id="btn-new-post" class="btn btn-primary" type="button">发帖</button>
+    </header>
+
+    <!-- 热门书籍排行：今日 / 本周 / 本月（按讨论量） -->
+    <div class="box hot-box">
+      <div class="box-head">
+        <h3 class="box-title">热门书籍</h3>
+        <div class="hot-tabs" id="hot-tabs">
+          <button class="filter is-active" type="button" data-range="day">今日</button>
+          <button class="filter" type="button" data-range="week">本周</button>
+          <button class="filter" type="button" data-range="month">本月</button>
+        </div>
+      </div>
+      <ol id="hot-list" class="hot-list"></ol>
+      <p id="hot-empty" class="muted" hidden>这段时间还没有人在讨论书。</p>
+    </div>
+
+    <!-- 帖子流 -->
+    <div class="box">
+      <div class="box-head">
+        <h3 class="box-title">最新讨论</h3>
+      </div>
+      <div id="post-list" class="post-list"></div>
+      <p id="post-empty" class="muted">还没有帖子，来发第一篇吧。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       P5 · 帖子详情（Day 11 新增）
+       COMMUNITY_DESIGN.md 5.2：封面 + 正文 + 评论 + 发表看法。
+       ============================================================ -->
+  <section id="view-post" class="view" hidden>
+    <header class="topbar">
+      <button id="btn-post-back" class="btn btn-ghost" type="button">← 返回论坛</button>
+    </header>
+    <div id="post-detail"></div>
+  </section>
+
+  <!-- ============================================================
+       P5b · 同书帖子列表（Day 11 补充）
+       COMMUNITY_DESIGN.md 6.4：点热门榜里的书，看这本书的所有相关帖子。
+       ============================================================ -->
+  <section id="view-book-posts" class="view" hidden>
+    <header class="topbar">
+      <button id="btn-book-posts-back" class="btn btn-ghost" type="button">← 返回论坛</button>
+    </header>
+    <div id="book-posts-head" class="detail-head"></div>
+    <div class="box">
+      <div class="box-head">
+        <h3 class="box-title">关于这本书的讨论</h3>
+      </div>
+      <div id="book-posts-list" class="post-list"></div>
+      <p id="book-posts-empty" class="muted" hidden>这本书还没有人发帖讨论。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       P6 · 私信（Day 11 新增）
+       COMMUNITY_DESIGN.md 第 7 节：会话列表 + 一对一对话窗口。
+       ============================================================ -->
+  <section id="view-messages" class="view" hidden>
+    <header class="topbar">
+      <div>
+        <h1>私信</h1>
+        <p class="muted sub">和聊得来的读者一对一交流</p>
+      </div>
+    </header>
+    <div class="box">
+      <div id="conversation-list" class="conversation-list"></div>
+      <p id="conversation-empty" class="muted" hidden>还没有私信。去论坛找本喜欢的书，认识个读者吧。</p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       P7 · 我的（Day 11 新增）
+       COMMUNITY_DESIGN.md 第 1 节：登录后展示个人公开信息。
+       未登录时显示登录/注册引导。
+       ============================================================ -->
+  <section id="view-me" class="view" hidden>
+    <div id="me-content"></div>
+  </section>
+
+  <!-- ============================================================
+       P7b · 个人主页（Day 11 Step 4 新增）
+       COMMUNITY_DESIGN.md 第 1 节：点别人头像/名字，看对方的公开主页
+       —— 简介 + 帖子 + 评论 + 书单（在读/想读/已读/喜欢）。
+       ============================================================ -->
+  <section id="view-profile" class="view" hidden>
+    <header class="topbar">
+      <button id="btn-profile-back" class="btn btn-ghost" type="button">← 返回</button>
+    </header>
+    <div id="profile-content"></div>
+  </section>
+
+  <!-- ============================================================
+       P8 · 登录 / 注册（Day 11 新增）
+       COMMUNITY_DESIGN.md 第 4 节：账号名 + 密码（可选头像）。
+       账号名占用校验（mock，后端就绪后接真接口）。
+       ============================================================ -->
+  <section id="view-auth" class="view" hidden>
+    <div class="auth-card">
+      <h2 id="auth-title">登录</h2>
+      <div class="auth-tabs">
+        <button id="auth-tab-login" class="filter is-active" type="button">登录</button>
+        <button id="auth-tab-register" class="filter" type="button">注册</button>
+      </div>
+      <form id="form-auth" novalidate>
+        <label class="field">
+          账号名 <span class="req">*</span>
+          <input id="auth-username" type="text" autocomplete="off" placeholder="2~20 个字符">
+        </label>
+        <label class="field">
+          密码 <span class="req">*</span>
+          <input id="auth-password" type="password" autocomplete="off" placeholder="至少 6 位">
+        </label>
+        <label class="field" id="auth-avatar-field" hidden>
+          头像（可选）
+        </label>
+        <div id="auth-avatar-picker" class="avatar-picker" hidden>
+          <div class="avatar-picker-row">
+            <span id="avatar-preview" class="avatar avatar-lg">海</span>
+            <div class="avatar-picker-colors" id="avatar-colors"></div>
+          </div>
+          <button id="btn-avatar-upload" class="btn" type="button">上传图片</button>
+          <button id="btn-avatar-clear" class="btn" type="button" hidden>清除头像</button>
+          <input id="avatar-file-input" type="file" accept="image/*" hidden>
+        </div>
+        <p id="auth-error" class="form-error" hidden></p>
+        <div class="modal-foot">
+          <button id="btn-auth-submit" class="btn btn-primary" type="submit">登录</button>
+        </div>
+      </form>
+      <p class="muted sub auth-hint">注册不需要手机号、不需要邮箱，只填账号名和密码。</p>
+    </div>
+  </section>
+
 </div>
 
 <!-- ============================================================
@@ -171,12 +351,55 @@
 </div>
 
 <!-- ============================================================
+     P9 · 发帖弹窗（Day 11 Step 5 新增）
+     COMMUNITY_DESIGN.md 第 5 节：书名 + 作者 + 封面（可选）+ 感想正文。
+     封面本轮先用「首字占位 / 用户填的网址」；Google Books 真接等后端打卡。
+     ============================================================ -->
+<div id="modal-compose" class="modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="compose-title">
+    <h2 id="compose-title">发帖 · 分享一本书</h2>
+
+    <form id="form-compose" novalidate>
+      <label class="field">
+        书名 <span class="req">*</span>
+        <input id="compose-title-input" type="text" autocomplete="off" placeholder="你想讨论的书名">
+      </label>
+
+      <label class="field">
+        作者
+        <input id="compose-author" type="text" autocomplete="off" placeholder="选填">
+      </label>
+
+      <label class="field">
+        封面网址
+        <input id="compose-cover" type="text" autocomplete="off" placeholder="选填，形如 https://…；留空用书名首字占位">
+      </label>
+
+      <label class="field">
+        你的感受 / 看法 <span class="req">*</span>
+        <textarea id="compose-content" rows="4" placeholder="这本书讲了什么、你读下来的感受…"></textarea>
+      </label>
+
+      <p id="compose-error" class="form-error" hidden></p>
+
+      <div class="modal-foot">
+        <button id="btn-cancel-compose" class="btn" type="button">取消</button>
+        <button id="btn-save-compose" class="btn btn-primary" type="submit">发布</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================================
      ⚠️ 只能用普通 <script>，禁止 type="module" / import / export
      原因见 docs/TECH_DESIGN.md 2.11：用模块方式打开会直接白屏。
      顺序也不能颠倒 —— store.js 必须先于 app.js。
+     community.js 是 Day 11 新增的社区层（论坛/私信/登录），
+     它要读到 app.js 暴露的视图切换能力，所以放在 app.js 之后。
      ============================================================ -->
 <script src="store.js"></script>
 <script src="app.js"></script>
+<script src="community.js"></script>
 
 </body>
 </html>
