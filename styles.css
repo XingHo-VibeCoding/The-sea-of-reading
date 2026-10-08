@@ -146,6 +146,66 @@ h3 { font-size: 15px; margin: 0; }
 
 .cover-lg { width: 132px; height: 186px; font-size: 54px; border-radius: 8px; }
 
+/* ------------------------------------------------------------ 悬停三件套（Day 11 Step 4） */
+
+/* 封面 3D 翻转：外层给透视，内层负责转，背面预先反转到后面藏着 */
+.flip-wrap { flex: none; perspective: 560px; }
+.flip-inner {
+  position: relative; width: 100%; height: 100%;
+  transform-style: preserve-3d;
+  transition: transform .45s cubic-bezier(.2, .7, .3, 1);
+}
+.flip-wrap .cover { backface-visibility: hidden; }
+
+/* 触屏上 :hover 会「粘住」，所以只在真有鼠标的设备上启用悬停翻转 */
+@media (hover: hover) {
+  .flip-wrap:hover .flip-inner { transform: rotateY(180deg); }
+}
+.flip-wrap.is-flipped .flip-inner { transform: rotateY(180deg); }
+
+@media (prefers-reduced-motion: reduce) {
+  .flip-inner { transition: none; }
+}
+
+.cover-back {
+  position: absolute; inset: 0;
+  border-radius: 6px;                     /* 实际值由 JS 按原封面同步 */
+  transform: rotateY(180deg); backface-visibility: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; padding: 5px; overflow: hidden;
+  background: #04342C;
+}
+.cover-back-label { font-size: 10px; line-height: 1; color: #9FE1CB; margin-bottom: 2px; }
+.cover-back-chip {
+  font-size: 10px; line-height: 1.25; color: #E1F5EE;
+  background: rgba(225, 245, 238, .14);
+  border-radius: 4px; padding: 1px 4px;
+  max-width: 100%; word-break: break-all; text-align: center;
+}
+.cover-back-chip.is-none { color: #7FB3A4; background: none; }
+
+/* 兜底：万一某处封面比 60px 还窄，放不下标题就只留关键词、字号再收一点 */
+.flip-wrap.is-tiny .cover-back-label { display: none; }
+.flip-wrap.is-tiny .cover-back-chip { font-size: 9px; padding: 1px 3px; }
+
+/* 论坛帖子卡片：背面只放最热的那 1 条关键词，空间够，字号放大到看得清 */
+.flip-wrap.is-single .cover-back-chip { font-size: 12px; padding: 3px 6px; }
+
+/* 悬停资料浮层：固定定位挂在 body 上，不会被卡片的 overflow 切掉半截 */
+.hover-tip {
+  position: fixed; z-index: 45;          /* 高于导航栏(40)，低于弹窗(50) */
+  min-width: 160px; max-width: 320px;    /* 简介从 20 来字扩到近百字，宽一点少折行 */
+  padding: 10px 12px;
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(30, 26, 22, .12);
+}
+.hover-tip-head { margin: 0 0 4px; font-size: 11px; color: var(--ink-soft); }
+.hover-tip-body { margin: 0; font-size: 13px; line-height: 1.6; color: var(--ink); }
+.hover-tip-works { margin: 6px 0 0; font-size: 12px; color: var(--ink-soft); }
+.hover-tip-highlight { margin: 6px 0 0; font-size: 12px; color: var(--accent-dk); }
+.hover-tip-none { margin: 0; font-size: 12px; color: var(--ink-soft); }
+
 /* ---------------------------------------------------------------- 状态标签 */
 
 .badge {
@@ -323,6 +383,16 @@ textarea { width: 100%; resize: vertical; }
 .site-nav-link:hover { background: #f1efec; color: var(--ink); }
 .site-nav-link.is-active { background: var(--accent-bg); color: var(--accent-dk); font-weight: 600; }
 
+/* 导航栏「私信」上的未读数字。没登录 / 没有未读时整颗隐藏 */
+.nav-badge {
+  display: inline-block; min-width: 16px; height: 16px; padding: 0 4px;
+  margin-left: 4px; border-radius: 8px;
+  background: var(--danger); color: #fff;
+  font-size: 10px; font-weight: 600; line-height: 16px; text-align: center;
+  vertical-align: 1px;
+}
+.nav-badge[hidden] { display: none; }
+
 .site-nav-auth { display: flex; align-items: center; gap: 8px; }
 /* nav-user 现在是 <button>，要重置按钮默认样式并加上可点击手感 */
 .nav-user {
@@ -374,9 +444,13 @@ textarea { width: 100%; resize: vertical; }
   color: var(--ink-soft); flex: none;
 }
 .hot-rank-top { color: var(--accent); }
-.cover-sm { width: 44px; height: 60px; font-size: 20px; border-radius: 5px; }
+/* Day 11 起与首页书卡统一成 72×100：原来的 44×60 放不下翻转关键词，字会挤成一团 */
+.cover-sm { width: 72px; height: 100px; font-size: 30px; border-radius: 6px; }
 .hot-body { min-width: 0; flex: 1; }
 .hot-title { margin: 0; font-weight: 600; font-size: 15px; }
+/* 作者名从「作者 · N 次讨论」里拆出来单独成元素，才有地方挂悬停资料 */
+.hot-author { color: inherit; }
+.hot-item:hover .hot-author { text-decoration: underline; }
 .hot-go { flex: none; font-size: 13px; color: var(--accent); white-space: nowrap; }
 .hot-item { cursor: pointer; }
 .hot-item:hover .hot-go { text-decoration: underline; }
@@ -401,6 +475,67 @@ textarea { width: 100%; resize: vertical; }
 }
 .post-foot { font-size: 13px; }
 
+/* --------------------------------------------- 收藏按钮（Day 11 新增） */
+
+/* 书名与收藏按钮同一行；窄屏挤不下时按钮换行，不撑破卡片 */
+.post-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 2px; }
+/* 热门榜的书名行：同款布局，榜单更紧凑 */
+.hot-title-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 2px; }
+.post-title-row .post-title { margin: 0; }
+
+.fav-btn {
+  display: inline-flex; align-items: center; gap: 5px; flex: none;
+  padding: 3px 10px 3px 8px;
+  font: inherit; font-size: 12px; line-height: 1.5;
+  color: var(--ink-soft);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color .15s, border-color .15s, background-color .15s, transform .15s;
+}
+.fav-btn:hover:not(:disabled) {
+  color: var(--ink); border-color: #cfc8bf; background: var(--paper);
+  transform: translateY(-1px);
+}
+.fav-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.fav-btn:disabled { cursor: progress; opacity: .7; }
+
+.fav-icon { width: 15px; height: 15px; flex: none; overflow: visible; }
+.fav-star, .fav-orbit, .fav-dot { transform-box: fill-box; transform-origin: center; }
+.fav-orbit { fill: none; stroke: currentColor; stroke-width: 1; stroke-dasharray: 2.6 3.2; opacity: .4; }
+.fav-star  { fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linejoin: round; }
+.fav-dot   { fill: currentColor; opacity: 0; }
+
+/* 悬停：星微微放大 —— 反馈落在鼠标所在的地方 */
+.fav-btn:hover:not(:disabled) .fav-star { transform: scale(1.12); }
+
+/* 处理中：轨道转起来、文字变「收藏中…」、按钮禁用（防重复点击） */
+.fav-btn.is-busy .fav-orbit { animation: fav-spin .9s linear infinite; opacity: .7; }
+
+/* 已收藏：星填金、轨道变实线并亮起轨道点 */
+.fav-btn.is-on { color: #8a5a12; border-color: #e6c07a; background: #fdf6e8; }
+.fav-btn.is-on .fav-star  { fill: #ef9f27; stroke: #9a6412; }
+.fav-btn.is-on .fav-orbit { stroke-dasharray: none; opacity: .85; }
+.fav-btn.is-on .fav-dot   { opacity: 1; }
+
+/* 只在「刚收藏成功」那一次播弹一下；刷新列表不会再播（那会是假反馈） */
+.fav-btn.is-just-on .fav-star { animation: fav-pop .34s ease-out; }
+
+/* 已在书架但状态不是「想读」：虚线边、光标变问号，看着就不像能改的样子 */
+.fav-btn.is-locked { border-style: dashed; cursor: help; }
+
+@keyframes fav-spin { to { transform: rotate(360deg); } }
+@keyframes fav-pop {
+  0%   { transform: scale(.72); }
+  62%  { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fav-btn, .fav-star, .fav-orbit, .fav-dot { transition: none; animation: none; }
+}
+
 /* ---------------------------------------------------------------- 评论 */
 
 .comment-list { list-style: none; margin: 0; padding: 0; }
@@ -411,6 +546,61 @@ textarea { width: 100%; resize: vertical; }
 .comment-body { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .comment-editor { display: flex; gap: 8px; margin-top: 16px; align-items: flex-end; }
 .comment-editor textarea { flex: 1; }
+
+/* 评论点赞心心：白色描边心 + 数字，放在评论头部右端 */
+.like-btn {
+  display: inline-flex; align-items: center; gap: 4px; flex: none;
+  align-self: center;          /* 头部其他元素按基线对齐，心心这一颗单独居中 */
+  margin-left: auto;           /* 推到这一行的右端（不另起一行） */
+  padding: 2px 7px 2px 6px;
+  font: inherit; font-size: 12px; line-height: 1.6;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color .15s, background-color .15s;
+}
+.like-btn:hover:not(:disabled) { color: var(--danger); background: var(--danger-bg); }
+.like-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.like-btn:disabled { cursor: progress; }
+
+.like-icon { width: 14px; height: 14px; flex: none; overflow: visible; }
+.like-heart {
+  fill: #ffffff; stroke: #7c8792; stroke-width: 1.5; stroke-linejoin: round;
+  transform-box: fill-box; transform-origin: center;
+  transition: fill .18s, stroke .18s;
+}
+
+/* 悬停：心微微放大 + 描边转红 —— 反馈落在鼠标所在的地方 */
+.like-btn:hover:not(:disabled) .like-heart { transform: scale(1.12); stroke: var(--danger); }
+
+/* 处理中：心轻轻脉动 + 按钮禁用（防重复点击），数字不动 */
+.like-btn.is-busy { opacity: .6; }
+.like-btn.is-busy .like-heart { animation: like-pulse .9s ease-in-out infinite; }
+
+/* 已点赞：心填红、数字加重 */
+.like-btn.is-liked { color: var(--danger); }
+.like-btn.is-liked .like-heart { fill: #e0453c; stroke: var(--danger); }
+.like-btn.is-liked .like-count { font-weight: 600; }
+
+/* 只在「刚点赞成功」那一次播弹一下；刷新列表不会再播（那会是假反馈） */
+.like-btn.is-just-liked .like-heart { animation: like-pop .36s ease-out; }
+
+@keyframes like-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(.82); }
+}
+@keyframes like-pop {
+  0%   { transform: scale(.6); }
+  45%  { transform: scale(1.32); }
+  70%  { transform: scale(.94); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .like-btn, .like-heart { transition: none; animation: none; }
+}
 
 /* ---------------------------------------------------------------- 私信 */
 
@@ -423,10 +613,15 @@ textarea { width: 100%; resize: vertical; }
 .conversation-body { min-width: 0; flex: 1; }
 .conversation-name { margin: 0; font-weight: 600; font-size: 15px; }
 .conversation-body .muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 未读徽标：显示未读条数（不是纯红点，一眼看出有几条没读） */
 .unread-dot {
-  width: 9px; height: 9px; border-radius: 50%;
-  background: var(--danger); flex: none;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 9px; background: var(--danger); color: #fff;
+  font-size: 11px; font-weight: 600; line-height: 18px; text-align: center;
+  flex: none;
 }
+/* 点击处理中的那一行：不可再点，避免连点重复进同一个会话 */
+.conversation-item.is-busy { opacity: .6; pointer-events: none; }
 
 .chat-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .chat-log {

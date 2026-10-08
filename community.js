@@ -84,7 +84,26 @@
     }
   ];
 
+  // 全站收藏量（mock）。按「书名」存而不是按帖子 —— 同一本书有多个帖子时，
+  // 收藏量必须是同一个数，不能各算各的。
+  var MOCK_FAVORITES = {
+    '三体': 128,
+    '明朝那些事儿': 96,
+    '百年孤独': 342
+  };
+
+  // 每条评论的点赞量（mock）。按评论 id 存；用户新发的评论不在表里，基数算 0。
+  // 显示出来的数 = 这里的基数 + 我自己点没点过（我是第 1 个赞就 +1）。
+  var MOCK_COMMENT_LIKES = {
+    'c1': 12,
+    'c2': 5,
+    'c3': 8
+  };
+
   // 私信会话（模拟 conversations / messages）
+  // unread: true = 对方发来的、我还没读的那条。
+  // 「我读过了没有」不写在这里 —— 它存在本机（Store 的 reading:conv-reads），
+  // 所以刷新页面之后已读状态还在。
   var MOCK_CONVERSATIONS = [
     {
       id: 'conv_1', peerId: 'user_2', peerName: '小林',
@@ -92,6 +111,13 @@
         { fromId: 'user_2', content: '你也喜欢三体啊！', createdAt: '2026-09-30T11:00:00' },
         { fromId: 'me', content: '是啊，刚看完第二部。', createdAt: '2026-09-30T11:02:00' },
         { fromId: 'user_2', content: '要不要聊聊黑暗森林？', createdAt: '2026-09-30T11:03:00', unread: true }
+      ]
+    },
+    {
+      id: 'conv_2', peerId: 'user_3', peerName: '月白',
+      messages: [
+        { fromId: 'me', content: '你那本《百年孤独》看完了吗？', createdAt: '2026-09-30T14:20:00' },
+        { fromId: 'user_3', content: '刚看完，结尾那阵风一来，我整个人都愣住了。', createdAt: '2026-09-30T14:22:00', unread: true }
       ]
     }
   ];
@@ -265,6 +291,7 @@
     }
 
     clearError();
+    renderNavBadge();
     window.scrollTo(0, 0);
 
     // 进入某页时刷新其内容
@@ -355,13 +382,38 @@
 
       var body = document.createElement('div');
       body.className = 'hot-body';
+
+      // 书名与收藏按钮同一行（与论坛帖子卡片保持一致）
+      var titleRow = document.createElement('div');
+      titleRow.className = 'hot-title-row';
+
       var t = document.createElement('p');
       t.className = 'hot-title';
       t.textContent = item.title;
-      body.appendChild(t);
+      titleRow.appendChild(t);
+
+      var fav = document.createElement('button');
+      fav.type = 'button';
+      fav.className = 'fav-btn';
+      renderFavButton(fav, item);
+      (function (btn, data) {
+        btn.addEventListener('click', function (e) { onFavClick(e, btn, data); });
+      })(fav, item);
+      titleRow.appendChild(fav);
+
+      body.appendChild(titleRow);
+
+      // 作者名单独包一层：悬停要弹作者卡，而和「N 次讨论」拼在一段纯文本里挂不了事件
       var meta = document.createElement('p');
       meta.className = 'muted sub';
-      meta.textContent = (item.author ? item.author + ' · ' : '') + item.heat + ' 次讨论';
+      if (item.author) {
+        var authorEl = document.createElement('span');
+        authorEl.className = 'hot-author';
+        authorEl.textContent = item.author;
+        meta.appendChild(authorEl);
+        meta.appendChild(document.createTextNode(' · '));
+      }
+      meta.appendChild(document.createTextNode(item.heat + ' 次讨论'));
       body.appendChild(meta);
       li.appendChild(body);
 
@@ -391,6 +443,222 @@
     }
   }
 
+  /* =============================================================
+   * 4.1 收藏按钮（Day 11 新增）
+   *
+   * 反馈的落点：点一下，按钮自己的「星芒形状 + 文字 + 数字」三处同时变，
+   * 反馈正落在用户的视线里，不用他去别处找提示（交互反馈原理）。
+   *
+   * 数据侧：收藏 = 把这本书写进本地书架（Store.addBook，状态「想读」）。
+   * 这是 community.js 第一次调用 Store —— 社区层与本地书架从此打通。
+   *
+   * 连续操作的三条防线：
+   *   ① 处理中 data-busy=1 + disabled，重复点击直接 return；
+   *   ② 已在书架但状态不是「想读」时，点击只提示、绝不删除；
+   *   ③ Store 读不出来（存储被禁 / 数据损坏）时走失败路径，不静默失败。
+   * ============================================================= */
+
+  // 星芒路径：外半径 6、内半径 2.4，中心 (10,10)
+  var STAR_D = 'M10,4 L11.41,8.06 L15.71,8.15 L12.28,10.74 L13.53,14.85 L10,12.4 L6.47,14.85 L7.72,10.74 L4.29,8.15 L8.59,8.06 Z';
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+
+  function baseFavorites(title) {
+    var n = MOCK_FAVORITES[title];
+    return typeof n === 'number' ? n : 0;
+  }
+
+  function statusLabel(s) {
+    return s === 'reading' ? '在读' : (s === 'finished' ? '已读' : '想读');
+  }
+
+  // 星芒图标：一圈轨道 + 一颗星 + 轨道上的小点（已收藏时才亮出来）
+  function favIcon() {
+    var svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 20 20');
+    svg.setAttribute('class', 'fav-icon');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+
+    var orbit = document.createElementNS(SVG_NS, 'circle');
+    orbit.setAttribute('cx', '10');
+    orbit.setAttribute('cy', '10');
+    orbit.setAttribute('r', '8');
+    orbit.setAttribute('class', 'fav-orbit');
+    svg.appendChild(orbit);
+
+    var dot = document.createElementNS(SVG_NS, 'circle');
+    dot.setAttribute('cx', '18');
+    dot.setAttribute('cy', '10');
+    dot.setAttribute('r', '1.7');
+    dot.setAttribute('class', 'fav-dot');
+    svg.appendChild(dot);
+
+    var star = document.createElementNS(SVG_NS, 'path');
+    star.setAttribute('d', STAR_D);
+    star.setAttribute('class', 'fav-star');
+    svg.appendChild(star);
+
+    return svg;
+  }
+
+  // 这本书在本地书架里是什么情况。readable=false 表示存储读不出来。
+  function favStateOf(title) {
+    if (typeof Store === 'undefined' || !Store || typeof Store.listBooks !== 'function') {
+      return { readable: false, inShelf: false, status: null, bookId: null };
+    }
+    var res = Store.listBooks();
+    if (!res.ok) return { readable: false, inShelf: false, status: null, bookId: null };
+
+    var books = res.data || [];
+    for (var i = 0; i < books.length; i++) {
+      if (books[i].title === title) {
+        return { readable: true, inShelf: true, status: books[i].status, bookId: books[i].id };
+      }
+    }
+    return { readable: true, inShelf: false, status: null, bookId: null };
+  }
+
+  // 按钮的子节点顺序固定：0=图标 1=文字 2=数字
+  function favPart(btn, i) { return btn.childNodes[i] || null; }
+
+  /**
+   * 按当前数据把按钮画成对应状态。
+   * @param justOn 传 true 时才播「收藏成功」的弹一下动画，
+   *               否则每次刷新列表都会跟着弹（那是假反馈）。
+   */
+  function renderFavButton(btn, post, justOn) {
+    var st = favStateOf(post.title);
+    var count = baseFavorites(post.title) + (st.inShelf ? 1 : 0);
+    var cls = 'fav-btn';
+    var text;
+
+    if (!st.readable) {
+      text = '收藏';
+    } else if (st.inShelf && st.status === 'want') {
+      cls += ' is-on';
+      if (justOn) cls += ' is-just-on';
+      text = '已收藏';
+    } else if (st.inShelf) {
+      cls += ' is-locked';
+      text = '已在书架';
+    } else {
+      text = '收藏';
+    }
+
+    btn.className = cls;
+    // 标记是哪本书的按钮：同一本书在页面上可能有两处按钮（热门榜 + 帖子卡片），
+    // 靠这个属性把它们找齐、一起刷新
+    btn.setAttribute('data-book-title', post.title);
+    btn.textContent = '';
+    btn.appendChild(favIcon());
+
+    var label = document.createElement('span');
+    label.className = 'fav-label';
+    label.textContent = text;
+    btn.appendChild(label);
+
+    var num = document.createElement('span');
+    num.className = 'fav-count';
+    num.textContent = String(count);
+    btn.appendChild(num);
+
+    btn.setAttribute('aria-pressed', (st.inShelf && st.status === 'want') ? 'true' : 'false');
+
+    if (!st.readable) {
+      btn.title = '读不到本地书架（浏览器存储不可用或数据损坏）';
+    } else if (st.inShelf && st.status === 'want') {
+      btn.title = '已收藏，点一下取消';
+    } else if (st.inShelf) {
+      btn.title = '这本书在你的书架里是「' + statusLabel(st.status) + '」';
+    } else {
+      btn.title = '收藏到想读';
+    }
+
+    return st;
+  }
+
+  function setFavBusy(btn, text) {
+    btn.setAttribute('data-busy', '1');
+    btn.disabled = true;
+    btn.classList.add('is-busy');
+    var label = favPart(btn, 1);
+    if (label) label.textContent = text;
+  }
+
+  function clearFavBusy(btn) {
+    btn.removeAttribute('data-busy');
+    btn.disabled = false;
+    btn.classList.remove('is-busy');
+  }
+
+  /**
+   * 同一本书在页面上可能有两处按钮（热门榜一处、帖子卡片一处）。
+   * 改动其中一处后，把其余的也刷成同一个状态——否则用户点了热门榜的收藏，
+   * 往下滚到帖子卡片还是「收藏」，会以为刚才那下没生效。
+   * @param except 跳过这一个（它自己刚渲染过，还要播动画，不必重画）
+   */
+  function syncFavButtons(title, post, except) {
+    var all = document.querySelectorAll('.fav-btn');
+    for (var i = 0; i < all.length; i++) {
+      var b = all[i];
+      if (b === except) continue;
+      if (b.getAttribute('data-book-title') === title) renderFavButton(b, post);
+    }
+  }
+
+  function onFavClick(e, btn, post) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }   // 别连带触发「点卡片进详情」
+    if (btn.getAttribute('data-busy') === '1') return;    // ① 处理中不重复响应
+
+    var st = favStateOf(post.title);
+
+    // ③ 读不出来：给失败提示，不静默
+    if (!st.readable) {
+      showError('收藏失败：读不到本地书架，浏览器存储可能被禁用或数据已损坏');
+      return;
+    }
+
+    // ② 已在书架但不是「想读」：只提示，绝不删掉用户自己的书
+    if (st.inShelf && st.status !== 'want') {
+      showSuccess('《' + post.title + '》已经在你的书架里（' + statusLabel(st.status) + '），不用再收藏');
+      return;
+    }
+
+    var removing = st.inShelf;
+    setFavBusy(btn, removing ? '取消中…' : '收藏中…');
+
+    // 模拟一点处理耗时；接后端后这里就是真实的请求等待时间
+    setTimeout(function () {
+      var res;
+      try {
+        res = removing
+          ? Store.deleteBook(st.bookId)
+          : Store.addBook({
+              title: post.title,
+              author: post.author,
+              coverUrl: post.coverUrl,
+              status: 'want'
+            });
+      } catch (err) {
+        // Store 若因存储写满等原因直接抛异常，这里兜住并转成看得懂的失败提示
+        // （store.js 开头的约定：错误不能静默）
+        res = { ok: false, error: '浏览器存储写入失败，可能是空间已满' };
+      }
+
+      clearFavBusy(btn);
+      if (res.ok) {
+        renderFavButton(btn, post, !removing);
+        syncFavButtons(post.title, post, btn);   // 热门榜与帖子卡片两处按钮保持一致
+        showSuccess(removing
+          ? '已取消收藏，从书架移除了'
+          : '已把《' + post.title + '》加入想读');
+      } else {
+        renderFavButton(btn, post);   // 退回点击前的样子，让用户可重试
+        showError('收藏失败：' + res.error);
+      }
+    }, 500);
+  }
+
   function buildPostCard(post) {
     var card = document.createElement('article');
     card.className = 'post-card';
@@ -404,10 +672,23 @@
     var body = document.createElement('div');
     body.className = 'post-card-body';
 
+    // 书名与收藏按钮同一行：按钮紧贴书名右边
+    var titleRow = document.createElement('div');
+    titleRow.className = 'post-title-row';
+
     var t = document.createElement('h3');
     t.className = 'post-title';
     t.textContent = post.title;
-    body.appendChild(t);
+    titleRow.appendChild(t);
+
+    var fav = document.createElement('button');
+    fav.type = 'button';
+    fav.className = 'fav-btn';
+    renderFavButton(fav, post);
+    fav.addEventListener('click', function (e) { onFavClick(e, fav, post); });
+    titleRow.appendChild(fav);
+
+    body.appendChild(titleRow);
 
     var meta = document.createElement('p');
     meta.className = 'post-meta';
@@ -691,6 +972,480 @@
     box.appendChild(commentBox);
   }
 
+  /* =============================================================
+   * 4.2 评论点赞按钮（Day 11 Step 3）
+   *   ① 白色小心心 → 点一下变红 + 数字 +1，再点即取消；
+   *   ② 处理中禁用，连点不会重复计数；
+   *   ③ 点赞记录存进 store.js 的 reading:likes（刷新后仍是红的）。
+   *   成功不弹提示条 —— 心变红正好发生在用户视线里，再弹一条反而吵；
+   *   只有失败才弹（失败必须说得出原因，不能静默）。
+   * ============================================================= */
+
+  // 心形路径：宽 14、高约 13.8，中心 (10,10)
+  var HEART_D = 'M10,16.8 C6.4,13.9 3,10.9 3,7.6 C3,5 5,3 7.4,3 C8.7,3 9.6,3.7 10,4.4 C10.4,3.7 11.3,3 12.6,3 C15,3 17,5 17,7.6 C17,10.9 13.6,13.9 10,16.8 Z';
+
+  function baseCommentLikes(commentId) {
+    var n = MOCK_COMMENT_LIKES[commentId];
+    return typeof n === 'number' ? n : 0;
+  }
+
+  function likeIcon() {
+    var svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 20 20');
+    svg.setAttribute('class', 'like-icon');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+
+    var heart = document.createElementNS(SVG_NS, 'path');
+    heart.setAttribute('d', HEART_D);
+    heart.setAttribute('class', 'like-heart');
+    svg.appendChild(heart);
+
+    return svg;
+  }
+
+  // 这条评论我赞过没有。readable=false 表示存储读不出来。
+  function likeStateOf(commentId) {
+    if (typeof Store === 'undefined' || !Store || typeof Store.listLikes !== 'function') {
+      return { readable: false, liked: false };
+    }
+    var res = Store.listLikes();
+    if (!res.ok) return { readable: false, liked: false };
+    var list = res.data || [];
+    return { readable: true, liked: list.indexOf(commentId) >= 0 };
+  }
+
+  // 按钮的子节点顺序固定：0=图标 1=数字
+  function likePart(btn, i) { return btn.childNodes[i] || null; }
+
+  /**
+   * 按当前数据把心心画成对应状态。
+   * @param justOn 传 true 时才播「刚点赞成功」的弹一下动画，
+   *               否则每次重渲染都会跟着弹（那是假反馈）。
+   */
+  function renderLikeButton(btn, comment, justOn) {
+    var st = likeStateOf(comment.id);
+    var count = baseCommentLikes(comment.id) + (st.liked ? 1 : 0);
+    var cls = 'like-btn';
+
+    if (st.liked) {
+      cls += ' is-liked';
+      if (justOn) cls += ' is-just-liked';
+    }
+
+    btn.className = cls;
+    // 标记是哪条评论的按钮：同一批评论在页面上可能出现两处
+    // （帖子详情 + 个人主页），靠它把同一条的按钮找齐、一起刷新
+    btn.setAttribute('data-comment-id', comment.id);
+    btn.textContent = '';
+    btn.appendChild(likeIcon());
+
+    var num = document.createElement('span');
+    num.className = 'like-count';
+    num.textContent = String(count);
+    btn.appendChild(num);
+
+    btn.setAttribute('aria-pressed', st.liked ? 'true' : 'false');
+    btn.setAttribute('aria-label', (st.liked ? '取消点赞' : '点赞') + '，当前 ' + count + ' 个赞');
+    btn.title = !st.readable
+      ? '读不到本地记录（浏览器存储不可用或数据损坏）'
+      : (st.liked ? '已点赞，点一下取消' : '点赞');
+
+    return st;
+  }
+
+  function setLikeBusy(btn) {
+    btn.setAttribute('data-busy', '1');
+    btn.disabled = true;
+    btn.classList.add('is-busy');
+  }
+
+  function clearLikeBusy(btn) {
+    btn.removeAttribute('data-busy');
+    btn.disabled = false;
+    btn.classList.remove('is-busy');
+  }
+
+  /**
+   * 同一条评论在页面上可能有两处按钮（帖子详情一处、个人主页一处）。
+   * 改动其中一处后，把其余的也刷成同一状态 —— 否则会出现
+   * 「详情页的心是红的，翻到个人主页还是白的」，用户以为没生效。
+   * @param except 跳过这一个（它自己刚渲染过，还要播动画）
+   */
+  function syncLikeButtons(commentId, comment, except) {
+    var all = document.querySelectorAll('.like-btn');
+    for (var i = 0; i < all.length; i++) {
+      var b = all[i];
+      if (b === except) continue;
+      if (b.getAttribute('data-comment-id') === commentId) renderLikeButton(b, comment);
+    }
+  }
+
+  function onLikeClick(e, btn, comment) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }   // 别连带触发外层元素的点击
+    if (btn.getAttribute('data-busy') === '1') return;    // ① 处理中不重复响应
+
+    var st = likeStateOf(comment.id);
+
+    // 存储读不出来：给失败提示，不静默失败
+    if (!st.readable) {
+      showError('点赞失败：读不到本地记录，浏览器存储可能被禁用或数据已损坏');
+      return;
+    }
+
+    setLikeBusy(btn);
+
+    // 模拟一点处理耗时；接后端后这里就是真实的请求等待时间
+    setTimeout(function () {
+      var res;
+      try {
+        res = Store.toggleLike(comment.id);
+      } catch (err) {
+        // Store 若因存储写满等原因直接抛异常，这里兜住并转成看得懂的失败提示
+        // （store.js 开头的约定：错误不能静默）
+        res = { ok: false, error: '浏览器存储写入失败，可能是空间已满' };
+      }
+
+      clearLikeBusy(btn);
+      if (res.ok) {
+        renderLikeButton(btn, comment, res.data.liked);
+        syncLikeButtons(comment.id, comment, btn);
+        // 成功不弹提示条：心变红就在用户视线里，再弹一条反而吵（Step 3 定的口径）
+      } else {
+        renderLikeButton(btn, comment);   // 退回点击前的样子，让用户可重试
+        showError('点赞失败：' + res.error);
+      }
+    }, 500);
+  }
+
+  /* ---------------------------------------------------------------
+   * 4.3 悬停三件套（Day 11 Step 4）
+   *
+   * 悬停封面 → 翻转露出「高赞评论关键词」
+   * 悬停书名 → 浮出简介卡（类型 · 年份 + 一句话简介）
+   * 悬停作者 → 浮出作者卡（介绍 + 他写过的其他书）
+   *
+   * ⚠️ 下面两张表里的一切都是**手工写死在代码里的 mock**：
+   *    现在没有后端也没有 AI，程序既读不懂评论、也总结不出关键词。
+   *    接上后端后这两张表整体删掉，改成接口返回。
+   *    没配到的书/作者会走降级 —— 浮层里写「暂无…」，不是空白框。
+   *
+   * 窄屏（≤560px）没有 hover：改成点一下展开、再点收起。
+   * ------------------------------------------------------------- */
+
+  // keywords 的顺序 = 高赞排序：第 1 条就是点赞量最高的那条（论坛卡片只显示它）
+  var MOCK_BOOK_INFO = {
+    '三体': {
+      genre: '科幻小说', year: '2006',
+      intro: '文化大革命期间，天体物理学家叶文洁向宇宙发出了地球的第一声呼唤。四光年外，一个濒临毁灭的文明收到了它。半个世纪后，纳米学者汪淼在一连串科学家自杀案里发现了倒计时，人类才意识到：宇宙不是寂静的，它一直在听。',
+      highlight: '看点：从文革到宇宙尽头的宏大跨度，硬科幻的入门首选',
+      keywords: ['黑暗森林', '人类渺小', '宇宙社会学']
+    },
+    '明朝那些事儿': {
+      genre: '历史通俗读物', year: '2006',
+      intro: '从朱元璋在皇觉寺出家说起，到崇祯在煤山自缢结束，二百七十六年、十六位皇帝。作者用讲故事的口吻把正史掰开揉碎，让胡惟庸、张居正、戚继光这些名字不再是考点，而是一个个有脾气、会犯错的活人。',
+      highlight: '看点：把两百多年正史讲成评书，历史小白也能一口气读完',
+      keywords: ['草根皇帝', '权谋', '幽默笔法']
+    },
+    '百年孤独': {
+      genre: '魔幻现实主义', year: '1967',
+      intro: '马孔多是个只有二十户人家的小镇。布恩迪亚家族在这里繁衍生息，七代人重复着相似的名字、相似的执拗和相似的孤独。当你翻到最后一页会明白：这个家族的历史，是一段早已写定、无人能改的预言。',
+      highlight: '看点：魔幻现实主义的代表作，读完会想从头再读一遍',
+      keywords: ['家族宿命', '循环', '魔幻现实']
+    }
+  };
+
+  var MOCK_AUTHOR_INFO = {
+    '刘慈欣': {
+      bio: '山西阳泉人，高级工程师出身，中国科幻走向世界的代表人物。《三体》拿下雨果奖最佳长篇，是亚洲作家第一次获此奖。',
+      works: ['球状闪电', '流浪地球', '超新星纪元', '赡养人类', '乡村教师']
+    },
+    '当年明月': {
+      bio: '本名石悦，湖北宜昌人。以轻松笔法写正史起家，把历史读物从学术书架推上畅销榜，也带出了后来一大批「通俗说史」的写作者。',
+      works: ['明朝那些事儿·洪武大帝', '明朝那些事儿·帝国飘摇', '明朝那些事儿·大结局']
+    },
+    '加西亚·马尔克斯': {
+      bio: '哥伦比亚记者、作家，1982 年诺贝尔文学奖得主。他把拉丁美洲的百年苦难写成一则巨大的寓言，魔幻现实主义自此成为世界文学的关键词。',
+      works: ['百年孤独', '霍乱时期的爱情', '没有人给他写信的上校', '一桩事先张扬的凶杀案', '族长的秋天']
+    }
+  };
+
+  var NARROW_QUERY = '(max-width: 560px)';
+
+  function isNarrow() {
+    return !!(window.matchMedia && window.matchMedia(NARROW_QUERY).matches);
+  }
+
+  // 全站共用一个浮层、挂在 body 上 —— 放进卡片内部会被卡片的 overflow 切掉半截
+  var hoverTip = null;
+  var tipAnchor = null;
+  var hideTimer = null;
+
+  function cancelHide() {
+    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+  }
+
+  function hideTip() {
+    cancelHide();
+    if (hoverTip && hoverTip.parentNode) hoverTip.parentNode.removeChild(hoverTip);
+    hoverTip = null;
+    tipAnchor = null;
+  }
+
+  // 鼠标从锚点移到浮层之间会经过几个像素的空隙，
+  // 所以不立刻关，留 200 毫秒缓冲；期间鼠标进到浮层里就把定时器撤掉。
+  function scheduleHide() {
+    cancelHide();
+    hideTimer = setTimeout(hideTip, 200);
+  }
+
+  function positionTip(tip, anchor) {
+    var r = anchor.getBoundingClientRect();
+    var tr = tip.getBoundingClientRect();
+    var left = r.left;
+    if (left + tr.width > window.innerWidth - 12) left = window.innerWidth - 12 - tr.width;
+    if (left < 12) left = 12;
+    var top = r.bottom + 6;
+    if (top + tr.height > window.innerHeight - 12) top = r.top - tr.height - 6;
+    if (top < 12) top = 12;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+
+  function showTip(anchor, node) {
+    cancelHide();
+    if (hoverTip && hoverTip.parentNode) hoverTip.parentNode.removeChild(hoverTip);
+    document.body.appendChild(node);
+    positionTip(node, anchor);
+    hoverTip = node;
+    tipAnchor = anchor;
+    node.addEventListener('mouseenter', cancelHide);
+    node.addEventListener('mouseleave', scheduleHide);
+  }
+
+  function buildTitleTip(title) {
+    var tip = document.createElement('div');
+    tip.className = 'hover-tip';
+
+    var info = MOCK_BOOK_INFO[title];
+    if (!info) {
+      var none = document.createElement('p');
+      none.className = 'hover-tip-none';
+      none.textContent = '暂无这本书的简介';
+      tip.appendChild(none);
+      return tip;
+    }
+
+    var head = document.createElement('p');
+    head.className = 'hover-tip-head';
+    head.textContent = [info.genre, info.year].filter(Boolean).join(' · ');
+    tip.appendChild(head);
+
+    var body = document.createElement('p');
+    body.className = 'hover-tip-body';
+    body.textContent = info.intro;
+    tip.appendChild(body);
+
+    if (info.highlight) {
+      var hl = document.createElement('p');
+      hl.className = 'hover-tip-highlight';
+      hl.textContent = info.highlight;
+      tip.appendChild(hl);
+    }
+
+    return tip;
+  }
+
+  function buildAuthorTip(name) {
+    var tip = document.createElement('div');
+    tip.className = 'hover-tip';
+
+    var info = MOCK_AUTHOR_INFO[name];
+    if (!info) {
+      var none = document.createElement('p');
+      none.className = 'hover-tip-none';
+      none.textContent = '暂无这位作者的资料';
+      tip.appendChild(none);
+      return tip;
+    }
+
+    var body = document.createElement('p');
+    body.className = 'hover-tip-body';
+    body.textContent = info.bio;
+    tip.appendChild(body);
+
+    if (info.works && info.works.length) {
+      var works = document.createElement('p');
+      works.className = 'hover-tip-works';
+      works.textContent = '还写过：《' + info.works.join('》《') + '》';
+      tip.appendChild(works);
+    }
+
+    return tip;
+  }
+
+  // 从卡片上取书名：帖子卡 .post-title / 首页书卡 .book-title / 热门榜 .hot-title
+  function cardTitleOf(cardEl) {
+    var t = cardEl.querySelector('.post-title')
+         || cardEl.querySelector('.book-title')
+         || cardEl.querySelector('.hot-title');
+    return t ? t.textContent : '';
+  }
+
+  /**
+   * 把 <div class="cover"> 裹进可翻转的 3D 结构（正面 = 原封面，背面 = 关键词）。
+   *
+   * 为什么不做成"渲染时就带翻转结构"：首页书卡是 app.js 渲染的，
+   * 改那边会把这个功能劈成两半。改成"第一次碰到才包装"，
+   * app.js 一行不用动；卡片重渲染后标记没了，下次悬停会自动重包。
+   */
+  function ensureFlippable(cover) {
+    if (cover.getAttribute('data-flip') === '1') return;
+    var card = cover.closest ? cover.closest('.post-card, .book-card, .hot-item') : null;
+    if (!card) return;
+    cover.setAttribute('data-flip', '1');
+
+    var info = MOCK_BOOK_INFO[cardTitleOf(card)];
+
+    // 论坛帖子卡片：卡片本身信息多、封面比首页小，背面只放最热的那 1 条关键词，
+    // 3 条挤在一起反而看不清（Day 11 大帅拍板）。首页书卡与热门榜放全部。
+    var single = !!(card.classList && card.classList.contains('post-card'));
+
+    var wrap = document.createElement('div');
+    wrap.className = 'flip-wrap';
+    // 尺寸必须跟原封面完全一致，否则会把卡片的排布挤变形
+    var cs = window.getComputedStyle(cover);
+    wrap.style.width = cs.width;
+    wrap.style.height = cs.height;
+    // 44×60 的小封面（论坛卡片、热榜）放不下「高赞关键词」这行标题，交给 CSS 收掉
+    if (parseInt(cs.width, 10) < 60) wrap.classList.add('is-tiny');
+
+    var inner = document.createElement('div');
+    inner.className = 'flip-inner';
+
+    var back = document.createElement('div');
+    back.className = 'cover-back';
+    back.style.borderRadius = cs.borderRadius;   // 跟原封面一致，翻转过去不露直角
+
+    var label = document.createElement('span');
+    label.className = 'cover-back-label';
+    label.textContent = '高赞关键词';
+    back.appendChild(label);
+
+    if (info && info.keywords && info.keywords.length) {
+      if (single) wrap.classList.add('is-single');
+      var words = single ? [info.keywords[0]] : info.keywords;
+      for (var i = 0; i < words.length; i++) {
+        var chip = document.createElement('span');
+        chip.className = 'cover-back-chip';
+        chip.textContent = words[i];
+        back.appendChild(chip);
+      }
+    } else {
+      var none = document.createElement('span');
+      none.className = 'cover-back-chip is-none';
+      none.textContent = '暂无';
+      back.appendChild(none);
+    }
+
+    cover.parentNode.insertBefore(wrap, cover);
+    inner.appendChild(cover);
+    inner.appendChild(back);
+    wrap.appendChild(inner);
+  }
+
+  /**
+   * 给一个容器挂上三件套的悬停行为。
+   * 用事件委托 —— 卡片重渲染（增删书、换筛选）之后不用重新绑定。
+   */
+  function bindHoverSuite(root) {
+    if (!root) return;
+
+    root.addEventListener('mouseover', function (e) {
+      if (isNarrow()) return;
+      var t = e.target;
+      if (!t || !t.closest) return;
+
+      var cover = t.closest('.cover');
+      if (cover && root.contains(cover)) {
+        // 在封面内部挪动（文字→边框）不算重新进入
+        if (cover.contains(e.relatedTarget)) return;
+        ensureFlippable(cover);
+        return;
+      }
+
+      var titleEl = t.closest('.post-title, .book-title, .hot-title');
+      if (titleEl && root.contains(titleEl)) {
+        if (titleEl.contains(e.relatedTarget)) return;
+        showTip(titleEl, buildTitleTip(titleEl.textContent));
+        return;
+      }
+
+      var authorEl = t.closest('.book-author, .hot-author');
+      if (authorEl && root.contains(authorEl)) {
+        if (authorEl.contains(e.relatedTarget)) return;
+        showTip(authorEl, buildAuthorTip(authorEl.textContent));
+        return;
+      }
+    });
+
+    root.addEventListener('mouseout', function (e) {
+      if (isNarrow()) return;
+      var t = e.target;
+      if (!t || !t.closest) return;
+
+      var titleEl = t.closest('.post-title, .book-title, .hot-title');
+      if (titleEl && !titleEl.contains(e.relatedTarget)) { scheduleHide(); return; }
+
+      var authorEl = t.closest('.book-author, .hot-author');
+      if (authorEl && !authorEl.contains(e.relatedTarget)) scheduleHide();
+    });
+  }
+
+  /**
+   * 窄屏点按：没有 hover，改成点一下展开、再点收起。
+   *
+   * 必须挂在捕获阶段并用 stopPropagation：
+   * app.js 也监听 #book-list 的点击（进详情页），同元素上的两个冒泡监听器
+   * 互相拦不住，只有在捕获阶段先拦下来才可靠。
+   * 点卡片的其它区域（状态标签、进度条、留白）照旧进详情页。
+   */
+  function bindNarrowTap() {
+    document.addEventListener('click', function (e) {
+      if (!isNarrow()) return;
+      var t = e.target;
+      if (!t || !t.closest) return;
+
+      var cover = t.closest('.cover');
+      if (cover) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (hoverTip) hideTip();
+        ensureFlippable(cover);                       // 第一次点：先包装
+        var w = cover.closest('.flip-wrap');
+        if (w) w.classList.toggle('is-flipped');
+        return;
+      }
+
+      var titleEl = t.closest('.post-title, .book-title, .hot-title');
+      if (titleEl) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (hoverTip && tipAnchor === titleEl) { hideTip(); return; }
+        showTip(titleEl, buildTitleTip(titleEl.textContent));
+        return;
+      }
+
+      var authorEl = t.closest('.book-author, .hot-author');
+      if (authorEl) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (hoverTip && tipAnchor === authorEl) { hideTip(); return; }
+        showTip(authorEl, buildAuthorTip(authorEl.textContent));
+      }
+    }, true);
+  }
+
   function buildComment(c) {
     var li = document.createElement('li');
     li.className = 'comment-item';
@@ -726,6 +1481,16 @@
     time.className = 'muted sub';
     time.textContent = timeAgo(c.createdAt);
     head.appendChild(time);
+
+    // 点赞心心：放在评论头部这一行的右端（靠 CSS margin-left:auto 推过去），
+    // 不另起一行，视觉上就是「这条评论的附属操作」
+    var like = document.createElement('button');
+    like.type = 'button';
+    like.className = 'like-btn';
+    renderLikeButton(like, c);
+    like.addEventListener('click', function (e) { onLikeClick(e, like, c); });
+    head.appendChild(like);
+
     li.appendChild(head);
     var body = document.createElement('p');
     body.className = 'comment-body';
@@ -736,7 +1501,79 @@
 
   /* =============================================================
    * 6. 私信（一对一对话）
+   *
+   * 已读怎么算（本轮）：
+   *   - 会话列表右边的红色数字 = 对方发来、我还没读的条数。
+   *   - 点开一个会话 = 已读，同时把「这个会话我读过了」写进本机
+   *     （Store.markRead → reading:conv-reads），所以刷新后不会再变未读。
+   *   - 已读是「按会话」记的：读掉一个，另一个的红点还在。
+   *   - 导航栏「私信」上的数字 = 所有会话未读数之和；没登录就不显示。
    * ============================================================= */
+
+  // 本机记的「已读会话 id」。读不出来（存储被禁 / 数据损坏）就当空 = 全部未读：
+  // 界面照常能用，只是刷新后红点会回来。
+  function readConvIds() {
+    if (typeof Store === 'undefined' || !Store || typeof Store.listReads !== 'function') return [];
+    var res = Store.listReads();
+    return (res && res.ok && res.data) ? res.data : [];
+  }
+
+  function isConvRead(convId) {
+    return readConvIds().indexOf(convId) >= 0;
+  }
+
+  // 一个会话的未读条数：读过的算 0；否则数对方发来的、标了 unread 的消息。
+  // 自己发的不算未读 —— 那是自己打的字。
+  function unreadCountOf(conv) {
+    if (isConvRead(conv.id)) return 0;
+    var n = 0;
+    for (var i = 0; i < conv.messages.length; i++) {
+      if (conv.messages[i].fromId !== 'me' && conv.messages[i].unread) n++;
+    }
+    return n;
+  }
+
+  function totalUnread() {
+    var n = 0;
+    for (var i = 0; i < MOCK_CONVERSATIONS.length; i++) {
+      n += unreadCountOf(MOCK_CONVERSATIONS[i]);
+    }
+    return n;
+  }
+
+  // 导航栏「私信」上的未读数字徽标。未登录不显示（没登录就收不到私信）。
+  function renderNavBadge() {
+    var btn = document.querySelector('.site-nav-link[data-nav="messages"]');
+    if (!btn) return;
+
+    var n = state.currentUser ? totalUnread() : 0;
+    var badge = btn.querySelector('.nav-badge');
+
+    if (n <= 0) {
+      if (badge) badge.hidden = true;
+      return;
+    }
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'nav-badge';
+      btn.appendChild(badge);
+    }
+    badge.hidden = false;
+    badge.textContent = n > 99 ? '99+' : String(n);
+    badge.setAttribute('aria-label', '未读私信 ' + n + ' 条');
+  }
+
+  // 把一个会话标记为已读：清掉内存里的未读标记，并写进本机记录。
+  // 返回 Store 的结果；写盘失败时界面照样算已读（否则人会以为没点上）。
+  function markConvRead(conv) {
+    for (var i = 0; i < conv.messages.length; i++) {
+      conv.messages[i].unread = false;
+    }
+    if (typeof Store === 'undefined' || !Store || typeof Store.markRead !== 'function') {
+      return { ok: false, error: '本机存储不可用' };
+    }
+    return Store.markRead(conv.id);
+  }
 
   function renderConversations() {
     var list = byId('conversation-list');
@@ -803,14 +1640,13 @@
     body.appendChild(preview);
     item.appendChild(body);
 
-    // 未读红点
-    var hasUnread = false;
-    for (var i = 0; i < conv.messages.length; i++) {
-      if (conv.messages[i].unread) { hasUnread = true; break; }
-    }
-    if (hasUnread) {
+    // 未读数字徽标：有几条显示几；读过的会话没有这一颗
+    var unread = unreadCountOf(conv);
+    if (unread > 0) {
       var dot = document.createElement('span');
       dot.className = 'unread-dot';
+      dot.textContent = unread > 99 ? '99+' : String(unread);
+      dot.setAttribute('aria-label', '未读 ' + unread + ' 条');
       item.appendChild(dot);
     }
 
@@ -819,16 +1655,28 @@
 
   function openConversation(id) {
     for (var i = 0; i < MOCK_CONVERSATIONS.length; i++) {
-      if (MOCK_CONVERSATIONS[i].id === id) {
-        state.currentConvId = id;
-        // 打开会话即清掉未读
-        for (var j = 0; j < MOCK_CONVERSATIONS[i].messages.length; j++) {
-          MOCK_CONVERSATIONS[i].messages[j].unread = false;
-        }
-        renderChat(MOCK_CONVERSATIONS[i]);
-        switchViewChat();
-        return;
+      if (MOCK_CONVERSATIONS[i].id !== id) continue;
+
+      // 防重复：这一项正在处理中，连点不生效
+      var row = document.querySelector('.conversation-item[data-id="' + id + '"]');
+      if (row && row.classList.contains('is-busy')) return;
+
+      var conv = MOCK_CONVERSATIONS[i];
+      state.currentConvId = id;
+      if (row) row.classList.add('is-busy');
+
+      var res = markConvRead(conv);   // 打开会话 = 已读
+      renderNavBadge();
+
+      renderChat(conv);
+      switchViewChat();
+
+      // 界面这时已经变成已读了；只有写盘失败才需要补一句提醒 ——
+      // 这一次管用，但刷新之后红点会回来。
+      if (!res || !res.ok) {
+        showError('已读状态没能存到本机：刷新页面后这个会话可能又显示未读。');
       }
+      return;
     }
   }
 
@@ -848,10 +1696,13 @@
     if (state.currentUser.id === peerId) { showError('不能给自己发私信'); return; }
     var conv = getOrCreateConversation(peerId, peerName);
     state.currentConvId = conv.id;
-    // 打开会话即清掉未读
-    for (var i = 0; i < conv.messages.length; i++) conv.messages[i].unread = false;
+    var res = markConvRead(conv);   // 打开会话 = 已读
+    renderNavBadge();
     renderChat(conv);
     switchViewChat();
+    if (!res || !res.ok) {
+      showError('已读状态没能存到本机：刷新页面后这个会话可能又显示未读。');
+    }
   }
 
   function switchViewChat() {
@@ -1063,6 +1914,8 @@
       loginBtn.hidden = false;
       userBox.hidden = true;
     }
+    // 登录 / 退出都会走这里：顺带把「私信」的未读数字对上
+    renderNavBadge();
   }
 
   /* =============================================================
@@ -1398,22 +2251,32 @@
       renderHot();
     });
 
-    // 帖子流点击进详情
+    // 帖子流点击进详情（收藏按钮自己处理，别连带跳进详情页）
     byId('post-list').addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('.fav-btn')) return;
       var card = e.target.closest ? e.target.closest('.post-card') : null;
       if (!card) return;
       state.postFromBook = false;
       openPost(card.getAttribute('data-id'));
     });
 
-    // 热门榜点击：进「这本书的所有讨论」
+    // 热门榜点击：进「这本书的所有讨论」（点收藏按钮时不跳，交给按钮自己处理）
     byId('hot-list').addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('.fav-btn')) return;
       var item = e.target.closest ? e.target.closest('.hot-item') : null;
       if (item) openBookPosts(item.getAttribute('data-title'));
     });
 
+    // 悬停三件套（Day 11 Step 4）：首页书单 + 论坛里的三处书籍列表
+    bindHoverSuite(byId('book-list'));
+    bindHoverSuite(byId('post-list'));
+    bindHoverSuite(byId('book-posts-list'));
+    bindHoverSuite(byId('hot-list'));
+    bindNarrowTap();
+
     // 同书帖子列表里，点某条帖子进详情（postFromBook 保持 true）
     byId('book-posts-list').addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('.fav-btn')) return;
       var card = e.target.closest ? e.target.closest('.post-card') : null;
       if (card) openPost(card.getAttribute('data-id'));
     });

@@ -11,8 +11,9 @@
  *   2. 所有方法都返回 { ok: true, data } 或 { ok: false, error: "中文提示" }。
  *      ——错误不能静默（TECH_DESIGN 3.4）。界面拿到 ok:false 必须提示用户，
  *        不能装作存上了。
- *   3. 存储只用两个键：reading:books / reading:notes（带前缀避免撞名）。
+ *   3. 存储只用三个键：reading:books / reading:notes / reading:likes。
  *      ——阅读进度不单独存，它是书的一部分；百分比也不存，实时算。
+ *      ——reading:likes 是 Day 11 加的：记「我点过赞的评论 id」，同样带前缀防撞名。
  * ========================================================================== */
 
 (function (global) {
@@ -22,6 +23,10 @@
 
   var KEY_BOOKS = 'reading:books';
   var KEY_NOTES = 'reading:notes';
+  var KEY_LIKES = 'reading:likes';
+  // 私信会话的「已读」记录。键名带 conv- 是为了和书单里的「已读(finished)」区分开，
+  // 两者含义完全不同，别混。
+  var KEY_READS = 'reading:conv-reads';
 
   var STATUS = {
     WANT: 'want',          // 想读
@@ -431,12 +436,84 @@
     return ok(removed);
   }
 
+  /* ------------------------------------------------------------ 点赞：接口 */
+
+  /**
+   * 列出「我点过赞的评论 id」，返回 string 数组。
+   * 没有数据 = 空数组（不是错误），和 listBooks 一致。
+   * 只存 id、不存整个评论：评论正文属于社区（将来在后端），
+   * 这里记的只是「我在本机的点赞痕迹」。
+   */
+  function listLikes() {
+    return readList(KEY_LIKES);
+  }
+
+  /**
+   * 点赞 / 取消点赞一条评论（同一条再点一次就是取消）。
+   * 返回 { liked: true } = 现在是已赞，{ liked: false } = 已取消。
+   */
+  function toggleLike(commentId) {
+    var id = cleanText(commentId);
+    if (!id) return fail('评论标识不能为空');
+
+    var likes = readList(KEY_LIKES);
+    if (!likes.ok) return likes;
+
+    var list = likes.data;
+    var i = list.indexOf(id);
+    var liked;
+    if (i >= 0) {
+      list.splice(i, 1);
+      liked = false;
+    } else {
+      list.push(id);
+      liked = true;
+    }
+
+    var written = writeList(KEY_LIKES, list);
+    if (!written.ok) return written;
+    return ok({ liked: liked });
+  }
+
+  /**
+   * 已读的私信会话 id 列表。
+   * 只记 id，不存会话正文——正文属于社区（将来在后端），
+   * 这里只留「我在本机读过哪些会话」这一笔痕迹。
+   * 没有记录 = 空数组（不是错误）。
+   */
+  function listReads() {
+    return readList(KEY_READS);
+  }
+
+  /**
+   * 把一个会话标记为已读。
+   * 幂等：同一个会话重复标记不会重复入列，也不会报错。
+   */
+  function markRead(convId) {
+    var id = cleanText(convId);
+    if (!id) return fail('会话标识不能为空');
+
+    var reads = readList(KEY_READS);
+    if (!reads.ok) return reads;
+
+    var list = reads.data;
+    // 注意：这里存的是 id 字符串（不是对象），所以用 indexOf，
+    // 不能用给对象数组准备的 indexOfId（它会读 list[i].id，对字符串恒为 -1）。
+    if (list.indexOf(id) < 0) list.push(id);
+
+    var written = writeList(KEY_READS, list);
+    if (!written.ok) return written;
+    return ok({ read: true });
+  }
+
   /* -------------------------------------------------------------- 对外暴露 */
 
   global.Store = {
     STATUS: STATUS,
     KEY_BOOKS: KEY_BOOKS,
     KEY_NOTES: KEY_NOTES,
+    KEY_LIKES: KEY_LIKES,
+    KEY_READS: KEY_READS,
 
     isAvailable: isAvailable,
 
@@ -450,7 +527,13 @@
     addNote: addNote,
     listNotes: listNotes,
     updateNote: updateNote,
-    deleteNote: deleteNote
+    deleteNote: deleteNote,
+
+    listLikes: listLikes,
+    toggleLike: toggleLike,
+
+    listReads: listReads,
+    markRead: markRead
   };
 
 })(window);
