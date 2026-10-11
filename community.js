@@ -267,7 +267,12 @@
 
   var VIEW_IDS = ['view-list', 'view-detail', 'view-forum', 'view-post', 'view-book-posts', 'view-messages', 'view-me', 'view-auth', 'view-profile'];
 
-  function switchView(name) {
+  function switchView(name, opts) {
+    // opts.keepError = true：切视图时**保留**顶部提示条。
+    //   启动阶段（init）必须这样——app.js 的 init 会先设「存储不可用」这类
+    //   全局告警，紧接着 community.js 的 init 调 switchView('home')，
+    //   若无条件 clearError 就会把刚设的告警擦掉，用户根本看不到（Day 12 修复）。
+    var keepError = !!(opts && opts.keepError);
     var map = {
       home: 'view-list',
       forum: 'view-forum',
@@ -290,7 +295,7 @@
       else links[k].classList.remove('is-active');
     }
 
-    clearError();
+    if (!keepError) clearError();
     renderNavBadge();
     window.scrollTo(0, 0);
 
@@ -2363,8 +2368,9 @@
     bindNav();
     bindEvents();
     updateNavUser();
-    // 默认停在首页（书单），与 app.js 的初始视图一致
-    switchView('home');
+    // 默认停在首页（书单），与 app.js 的初始视图一致。
+    // keepError: 别擦掉 app.js 刚设的「存储不可用」等全局告警（Day 12 修复）。
+    switchView('home', { keepError: true });
   }
 
   init();
