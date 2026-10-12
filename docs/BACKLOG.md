@@ -48,3 +48,26 @@
 3. 依赖：封面源为 Google Books（见 `COMMUNITY_DESIGN.md`），mock 阶段用假封面。
 4. 涉及文件预计：`index.html`（搜索框 + 下拉容器）、`community.js`（搜索/排序/渲染/跳转）、
    `styles.css`（下拉样式）。数据侧需要一份「书名 → 作者/封面/热度」的 mock 表。
+
+---
+
+## 2. 加 `.nojekyll` 让 `skills/` 目录在线可访问（发现于：2026-10-11 · Day 12 收尾）
+
+**现象**：Day 12 提交后，在线站点上
+`https://xingho-vibecoding.github.io/The-sea-of-reading/skills/filter-interaction-check/SKILL.md`
+返回 **404**；而同一次提交里 `docs/BACKLOG.md`、`docs/skill-runs/…md` 都是 200。
+
+**根因**（实测确认）：
+- 仓库里**没有 `.nojekyll` 文件**，所以 GitHub Pages 会用 **Jekyll** 处理站点
+- **Jekyll 默认排除 `skills/` 目录**（视为主题/插件目录）→ 该目录不进发布产物
+- 文件本身在仓库里是**完好的**（GitHub API 实测 `skills/filter-interaction-check/SKILL.md`
+  存在，3604 字节，`sha: a4c7eb5c…`）
+
+**影响范围**：只影响「在浏览器里直接点开 SKILL.md」。**不影响仓库内容、不影响作业**
+（作业只要求「Skill 文件在项目内」+ 截图里有文件名，资源管理器截图已满足）。
+
+**解法**（待办）：在仓库根新建一个**空文件** `.nojekyll`，提交推送即可。
+Jekyll 见到它就不处理站点，`skills/` 会原样发布。
+
+**注意**：`.nojekyll` 是**空文件**，内容为 0 字节。别写任何内容。
+

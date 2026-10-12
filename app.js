@@ -31,9 +31,6 @@
   var el = {
     appError: byId('app-error'),
 
-    viewList: byId('view-list'),
-    viewDetail: byId('view-detail'),
-
     btnAddBook: byId('btn-add-book'),
     btnAddFirst: byId('btn-add-first'),
     filters: byId('filters'),
@@ -91,7 +88,8 @@
     filter: 'all',        // all / want / reading / finished
     currentBookId: null,  // 详情页正在看哪本
     editingBookId: null,  // 书籍弹窗在编辑哪本；null = 新增
-    editingNoteId: null   // 笔记编辑器在改哪条；null = 新写一条
+    editingNoteId: null,  // 笔记编辑器在改哪条；null = 新写一条
+    loadTimer: null       // 加载态的计时器（Day 13）
   };
 
   /* -------------------------------------------------------------- 小工具 */
@@ -178,50 +176,64 @@
     return wrap;
   }
 
-  /* ---------------------------------------------------------- 视图切换 */
+  /* ---------------------------------------------- 加载态的两条设定（Day 13）
+     写在前面是有原因的：下面的 window.AppViews 要立刻把 LOADING_MS 导出去，
+     而 var 赋值有时序 —— 写在后面的话导出的会是 undefined。
 
-  // 社区视图（Day 11 新增）的 id 列表，切回 list/detail 时要把它们一起藏起来
-  var COMMUNITY_VIEWS = ['view-forum', 'view-post', 'view-messages', 'view-me', 'view-auth'];
+     LOADING_MS 是「演加载」的等待时长。本机读数据是瞬时的，靠它把这一态演出来。
+     测试把它设成 0 → 变成同步渲染（见 _ac_test.js / _d2d_test.js）；
+     截图时设得很大，就能把骨架屏定住拍下来。 */
+  var LOADING_MS = typeof window.__LOADING_MS__ === 'number' ? window.__LOADING_MS__ : 300;
+  var LOADING_NOTE = '正在加载…（本地演示：接入后端后，这里会是真实的等待）';
 
-  function showView(name) {
-    el.viewList.hidden = name !== 'list';
-    el.viewDetail.hidden = name !== 'detail';
-    // 切到书单/详情时，社区视图全部收起，避免残留
-    for (var i = 0; i < COMMUNITY_VIEWS.length; i++) {
-      var v = byId(COMMUNITY_VIEWS[i]);
-      if (v) v.hidden = true;
-    }
-  }
+  /* ---------------------------------------- 与路由层的接口（Day 13）
 
-  // 暴露给 community.js：让社区层也能切回「列表/详情」，且不被它自己挡住
-  window.AppViews = {
-    showList: function () { goList(); },
-    showDetail: function (id) { openDetail(id); }
-  };
+     约定（改动时别破坏，否则会死循环）：
+       enterList / enterDetail 只「往页面里填内容」，绝不自己切页面；
+       切页面是 community.js 路由层（window.Router）唯一的职责。
+       这里若再调 go()，就和路由互相调用 —— 死循环。
 
-  function goList() {
+     Day 13 之前，视图显隐散在三处（app.js 的 showView + community.js 的
+     switchView 与三个 switchViewXxx），现在统一收进路由的 showOnly。 */
+
+  function enterList() {
     state.currentBookId = null;
     renderList();          // 状态可能刚改过，回来要刷新（AC-6）
-    showView('list');
-    clearError();
+    return true;
+  }
+
+  function enterDetail(id) {
+    var res = Store.getBook(id);
+    if (!res.ok) { report(res); return false; }
+    if (!res.data) {
+      showError('这本书不存在，可能已被删除');
+      return false;        // 交给路由退回书单
+    }
+    state.currentBookId = id;
+    closeNoteEditor();          // 每次进详情页，笔记编辑器都是收起的
+    renderDetail(res.data);
+    return true;
+  }
+
+  // 跳转别名：项目里其他代码一直叫这两个名字，内部改成走路由（Day 13）
+  function goList() {
+    if (window.Router) { window.Router.go('/'); return; }
+    enterList();             // 路由层还没就绪（极早期调用）时，至少把内容渲染对
   }
 
   function openDetail(id) {
-    var res = Store.getBook(id);
-    if (!res.ok) { report(res); return; }
-    if (!res.data) {
-      showError('这本书不存在，可能已被删除');
-      renderList();
-      showView('list');
-      return;
-    }
-    state.currentBookId = id;
-    clearError();
-    closeNoteEditor();          // 每次进详情页，笔记编辑器都是收起的
-    renderDetail(res.data);
-    showView('detail');
-    window.scrollTo(0, 0);
+    if (window.Router) { window.Router.go('/book/' + encodeURIComponent(id)); return; }
+    enterDetail(id);
   }
+
+  // 暴露给 community.js：路由层 + 加载态（Day 13 起它才真正被用到）
+  window.AppViews = {
+    enterList: enterList,
+    enterDetail: enterDetail,
+    showSkeleton: showSkeleton,
+    LOADING_MS: LOADING_MS,
+    LOADING_NOTE: LOADING_NOTE
+  };
 
   /* ---------------------------------------------------------- 书单渲染 */
 
@@ -270,6 +282,63 @@
     return card;
   }
 
+  // 筛选项高亮（从 renderList 里抽出来：切档时要「立刻」亮，不等加载完）
+  function renderFilterActive() {
+    var btns = el.filters.querySelectorAll('.filter');
+    for (var i = 0; i < btns.length; i++) {
+      var on = btns[i].getAttribute('data-status') === state.filter;
+      if (on) btns[i].classList.add('is-active');
+      else btns[i].classList.remove('is-active');
+    }
+  }
+
+  /* -------------------------------------- 加载态（Day 13 的第四种状态）
+     本机读数据是瞬时完成的，根本来不及「加载」。这里用一段约 300ms 的占位
+     把这一态演出来，好让「空 / 加载 / 错误 / 正常」四种都能在页面上看见。
+     接上后端后：把 startListLoading 里的定时器换成「等请求回来」即可。 */
+  function showSkeleton(container, count, note) {
+    container.textContent = '';
+    container.hidden = false;
+    container.setAttribute('aria-busy', 'true');   // 告诉读屏软件「正忙」
+    for (var i = 0; i < count; i++) {
+      var card = document.createElement('div');
+      card.className = 'skeleton-card';
+      card.setAttribute('aria-hidden', 'true');    // 占位块本身不用念
+      var cov = document.createElement('div');
+      cov.className = 'skeleton-block skeleton-cover';
+      card.appendChild(cov);
+      var body = document.createElement('div');
+      body.className = 'skeleton-body';
+      var l1 = document.createElement('div');
+      l1.className = 'skeleton-block skeleton-line is-wide';
+      var l2 = document.createElement('div');
+      l2.className = 'skeleton-block skeleton-line is-narrow';
+      body.appendChild(l1);
+      body.appendChild(l2);
+      card.appendChild(body);
+      container.appendChild(card);
+    }
+    var p = document.createElement('p');
+    p.className = 'skeleton-note';
+    p.setAttribute('role', 'status');              // 读屏软件会播报这句
+    p.textContent = note || LOADING_NOTE;
+    container.appendChild(p);
+  }
+
+  // 切筛选档 = 走一次「加载中」：先骨架，过一会儿再出内容
+  function startListLoading() {
+    renderFilterActive();          // 高亮立刻跟上，点了才有反馈
+    el.emptyState.hidden = true;
+    el.filterEmpty.hidden = true;
+    if (LOADING_MS <= 0) { renderList(); return; }   // 测试环境：不演加载
+    showSkeleton(el.bookList, 3);
+    if (state.loadTimer) window.clearTimeout(state.loadTimer);
+    state.loadTimer = window.setTimeout(function () {
+      state.loadTimer = null;
+      renderList();
+    }, LOADING_MS);
+  }
+
   function renderList() {
     var res = Store.listBooks();
     if (!res.ok) { report(res); return; }
@@ -279,15 +348,10 @@
       return state.filter === 'all' || b.status === state.filter;
     });
 
-    // 筛选项高亮
-    var btns = el.filters.querySelectorAll('.filter');
-    for (var i = 0; i < btns.length; i++) {
-      var on = btns[i].getAttribute('data-status') === state.filter;
-      if (on) btns[i].classList.add('is-active');
-      else btns[i].classList.remove('is-active');
-    }
+    renderFilterActive();
 
     el.bookList.textContent = '';
+    el.bookList.setAttribute('aria-busy', 'false');   // 加载态收尾（Day 13）
     for (var k = 0; k < shown.length; k++) {
       el.bookList.appendChild(buildCard(shown[k]));
     }
@@ -563,7 +627,7 @@
       // 若停在「已读」等筛选档下就看不见它。
       state.filter = 'all';
       renderList();
-      showView('list');
+      goList();                 // 回书单页，地址同步为 #/（Day 13 走路由）
       window.scrollTo(0, 0);
     }
   });
@@ -583,20 +647,21 @@
     openDetail(card.getAttribute('data-id'));
   });
 
-  // 筛选
+  // 筛选（切档走一次加载态：先骨架、过一会儿再出内容）
   el.filters.addEventListener('click', function (e) {
     var btn = e.target.closest ? e.target.closest('.filter') : null;
     if (!btn) return;
     var s = btn.getAttribute('data-status');
-    if (!s) return;
+    if (!s || s === state.filter) return;   // 点当前档不重来一遍（Day 13）
     state.filter = s;
-    renderList();
+    startListLoading();
   });
 
   // 「没有 XX 的书」那句提示里的出口
   el.btnShowAll.addEventListener('click', function () {
+    if (state.filter === 'all') return;
     state.filter = 'all';
-    renderList();
+    startListLoading();
   });
 
   // 详情页：状态切换（AC-6）
@@ -739,7 +804,8 @@
     closeNoteEditor();
 
     renderList();
-    showView('list');
+    // 视图显隐交给 community.js 的路由层（Day 13）：
+    // 它会按地址栏的 hash 决定落到哪一页。
   }
 
   // 兜底：任何未预期的报错都不该让页面变成一片空白

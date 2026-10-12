@@ -229,6 +229,41 @@ h3 { font-size: 15px; margin: 0; }
   padding: 54px 24px; text-align: center;
   background: var(--card); border: 1px dashed #d9d3cb; border-radius: var(--radius);
 }
+
+/* ---------------------------------------------------------------- 加载态（Day 13）
+   本机读数据是瞬时完成的，根本来不及「加载」。这里用一段约 300ms 的占位
+   把「加载中」演出来，好在页面上真的看见这一态。
+   接上后端后：换掉 app.js 里 showSkeleton 的调用即可，其余样式照用。 */
+.skeleton-card {
+  display: flex; gap: 14px; align-items: flex-start;
+  padding: 14px;
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.skeleton-block {
+  background: linear-gradient(90deg, #ece8e2 25%, #f7f5f2 50%, #ece8e2 75%);
+  background-size: 200% 100%;
+  border-radius: 6px;
+  animation: skeleton-sweep 1.2s ease-in-out infinite;
+}
+.skeleton-cover { width: 72px; height: 100px; flex: none; }
+.skeleton-body { flex: 1; min-width: 0; padding-top: 8px; }
+.skeleton-line { height: 14px; margin-bottom: 10px; }
+.skeleton-line.is-wide { width: 62%; }
+.skeleton-line.is-narrow { width: 38%; }
+/* 说明小字：在网格容器里横跨整行，在普通容器里也占满一行 */
+.skeleton-note {
+  grid-column: 1 / -1; flex: 1 0 100%;
+  margin: 0; padding: 4px 0;
+  color: var(--ink-faint); font-size: 13px;
+}
+@keyframes skeleton-sweep {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-block { animation: none; }
+}
 .empty-title { font-size: 17px; font-weight: 600; margin: 0 0 4px; }
 .empty .btn { margin-top: 16px; }
 

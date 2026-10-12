@@ -126,8 +126,10 @@
   var state = {
     currentUser: null,          // 登录用户（null=未登录）
     currentRange: 'day',        // 热门档位
+    hotTimer: null,             // 榜单加载态的计时器（Day 13）
     currentPostId: null,        // 正在看的帖子
     currentConvId: null,        // 正在聊的会话
+    openConvOnEnter: false,     // 进私信页时是否要直接展开某段对话（「私信 TA」入口）
     authMode: 'login',          // login / register
     avatarColor: null,          // 注册时选中的色块头像颜色（null=未选）
     avatarImage: null,          // 注册时上传的图片头像 dataURL（null=未传）
@@ -262,49 +264,130 @@
   }
 
   /* =============================================================
-   * 2. 导航切换
+   * 2. 路由（Day 13）
+   *
+   * 地址栏里 # 后面那截，就是「现在在哪一页」。用 hash 而不是普通路径，
+   * 是因为本项目要能双击 index.html（file://）打开 —— 实测在 file:// 下
+   * history.pushState 改路径会直接抛 SecurityError（origin 是 null），
+   * 而改 hash 与 location.hash 赋值都正常。
+   *
+   *   #/                  书单（首页）
+   *   #/forum             论坛
+   *   #/messages          私信
+   *   #/me                我的
+   *   #/login             登录 / 注册
+   *   #/book/:id          书详情
+   *   #/post/:id          帖子详情
+   *   #/book-posts/:标题  同书讨论
+   *   #/user/:id          个人主页
+   *
+   * 三条约定（改动时别破坏，否则会死循环或连跳两次）：
+   *   1. go()         只改地址，不碰页面
+   *   2. applyRoute() 是唯一决定「显示哪个页面」的地方
+   *   3. enterXxx()   只往页面里填内容，绝不自己切页面
    * ============================================================= */
 
   var VIEW_IDS = ['view-list', 'view-detail', 'view-forum', 'view-post', 'view-book-posts', 'view-messages', 'view-me', 'view-auth', 'view-profile'];
 
-  function switchView(name, opts) {
-    // opts.keepError = true：切视图时**保留**顶部提示条。
-    //   启动阶段（init）必须这样——app.js 的 init 会先设「存储不可用」这类
-    //   全局告警，紧接着 community.js 的 init 调 switchView('home')，
-    //   若无条件 clearError 就会把刚设的告警擦掉，用户根本看不到（Day 12 修复）。
-    var keepError = !!(opts && opts.keepError);
-    var map = {
-      home: 'view-list',
-      forum: 'view-forum',
-      messages: 'view-messages',
-      me: 'view-me',
-      login: 'view-auth'
-    };
-    var target = map[name] || 'view-list';
+  // 导航栏按钮的 data-nav 值 → 路由路径
+  var NAV_PATH = {
+    home: '/',
+    forum: '/forum',
+    messages: '/messages',
+    me: '/me',
+    login: '/login'
+  };
 
+  // 地址里的参数可能是编码过的（中文书名），解不开就按原样用，不要抛错
+  function decodeParam(s) {
+    try { return decodeURIComponent(s); } catch (e) { return s; }
+  }
+
+  // fallback：地址里的东西不存在（书/帖/用户已删）时退到哪一级
+  var ROUTES = [
+    { re: /^\/book-posts\/(.+)$/, view: 'view-book-posts', nav: null, fallback: '/forum', enter: function (m) { return enterBookPosts(decodeParam(m[1])); } },
+    { re: /^\/book\/([^\/]+)$/, view: 'view-detail', nav: null, fallback: '/', enter: function (m) { return window.AppViews.enterDetail(decodeParam(m[1])); } },
+    { re: /^\/post\/([^\/]+)$/, view: 'view-post', nav: null, fallback: '/forum', enter: function (m) { return enterPost(decodeParam(m[1])); } },
+    { re: /^\/user\/([^\/]+)$/, view: 'view-profile', nav: null, fallback: '/forum', enter: function (m) { return enterProfile(decodeParam(m[1])); } },
+    { re: /^\/forum$/, view: 'view-forum', nav: 'forum', enter: function () { renderForum(); return true; } },
+    { re: /^\/messages$/, view: 'view-messages', nav: 'messages', enter: function () { enterMessages(); return true; } },
+    { re: /^\/me$/, view: 'view-me', nav: 'me', enter: function () { renderMe(); return true; } },
+    { re: /^\/login$/, view: 'view-auth', nav: 'login', enter: function () { renderAuth(); return true; } },
+    { re: /^\/(shelf)?$/, view: 'view-list', nav: 'home', enter: function () { window.AppViews.enterList(); return true; } }
+  ];
+
+  function parseRoute(hash) {
+    var path = String(hash || '').replace(/^#/, '');
+    if (path === '') path = '/';
+    for (var i = 0; i < ROUTES.length; i++) {
+      var m = path.match(ROUTES[i].re);
+      if (m) return { def: ROUTES[i], params: m };
+    }
+    return null;
+  }
+
+  // 唯一的「显示哪个视图」实现（原来散在三套切换函数里，Day 13 合并）
+  function showOnly(viewId) {
     for (var i = 0; i < VIEW_IDS.length; i++) {
       var v = byId(VIEW_IDS[i]);
-      if (v) v.hidden = (VIEW_IDS[i] !== target);
+      if (v) v.hidden = (VIEW_IDS[i] !== viewId);
     }
+  }
 
-    // 高亮导航
+  function highlightNav(navName) {
     var links = document.querySelectorAll('.site-nav-link');
-    for (var k = 0; k < links.length; k++) {
-      var on = links[k].getAttribute('data-nav') === name;
-      if (on) links[k].classList.add('is-active');
-      else links[k].classList.remove('is-active');
+    for (var i = 0; i < links.length; i++) {
+      var on = !!navName && links[i].getAttribute('data-nav') === navName;
+      if (on) links[i].classList.add('is-active');
+      else links[i].classList.remove('is-active');
     }
+  }
 
-    if (!keepError) clearError();
+  // 只改地址。地址没变时（已在目标页）手动重放一次，保证内容是最新的。
+  function go(path) {
+    var target = '#' + path;
+    if (location.hash === target) { applyRoute(false); return; }
+    location.hash = target;   // 触发 hashchange → applyRoute
+  }
+
+  // isBoot = true：启动阶段。这时不能擦掉 app.js 刚设的「存储不可用」告警
+  // （Day 12 修复的 bug，别改回去）。
+  //
+  // skipClear：兜底跳转（地址不认识 / 内容已删）时用。跳转本身会再触发一次
+  // applyRoute，若那时照常 clearError，就会把刚给用户的提示擦掉 ——
+  // Day 13 实测踩到：乱输地址时提示条一闪就没。
+  var skipClear = false;
+
+  function applyRoute(isBoot) {
+    var r = parseRoute(location.hash);
+    if (!r) {
+      skipClear = true;
+      go('/');
+      if (!isBoot) showError('找不到这个地址，已回到书单。');
+      return;
+    }
+    showOnly(r.def.view);
+    highlightNav(r.def.nav);
+    if (!isBoot && !skipClear) clearError();
+    skipClear = false;
+    var entered = r.def.enter(r.params);
+    if (entered === false) {
+      // 内容不存在（书/帖/人已删）：enter 里已给出具体原因，跳走时别擦掉它
+      skipClear = true;
+      go(r.def.fallback || '/');
+      return;
+    }
     renderNavBadge();
     window.scrollTo(0, 0);
-
-    // 进入某页时刷新其内容
-    if (name === 'forum') renderForum();
-    if (name === 'messages') renderConversations();
-    if (name === 'me') renderMe();
-    if (name === 'login') renderAuth();
   }
+
+  // 暴露给 app.js：它那边的 goList() / openDetail() 改成走路由
+  window.Router = {
+    go: function (path) { go(path); },
+    apply: function () { applyRoute(false); }
+  };
+
+  window.addEventListener('hashchange', function () { applyRoute(false); });
 
   function bindNav() {
     document.addEventListener('click', function (e) {
@@ -315,7 +398,7 @@
       if (!nav) return;
       var name = nav.getAttribute('data-nav');
       // 登录按钮和导航里的登录入口共用 data-nav="login"
-      switchView(name);
+      go(NAV_PATH[name] || '/');
     });
   }
 
@@ -364,6 +447,7 @@
     var list = byId('hot-list');
     var empty = byId('hot-empty');
     list.textContent = '';
+    list.setAttribute('aria-busy', 'false');   // 加载态收尾（Day 13）
 
     var hot = aggregateHot();
     if (hot.length === 0) { empty.hidden = false; return; }
@@ -790,9 +874,15 @@
     return out;
   }
 
+  // 跳转：把地址改到「这本书的讨论」（渲染交给 enterBookPosts）
   function openBookPosts(title) {
+    go('/book-posts/' + encodeURIComponent(title));
+  }
+
+  // 渲染：只往页面里填内容，不切页面（切页面由路由统一做）
+  function enterBookPosts(title) {
     var posts = postsByTitle(title);
-    if (posts.length === 0) { showError('这本书还没有讨论'); return; }
+    if (posts.length === 0) { showError('这本书还没有讨论'); return false; }
     state.postFromBook = true;
     state.lastBookTitle = title;
 
@@ -817,25 +907,15 @@
     meta.appendChild(p);
     head.appendChild(meta);
 
-    // 帖子列表
+    // 帖子列表（长度 0 的情况已在上面拦掉，这里一定有内容）
     var list = byId('book-posts-list');
     var empty = byId('book-posts-empty');
     list.textContent = '';
-    if (posts.length === 0) { empty.hidden = false; return; }
     empty.hidden = true;
     for (var k = 0; k < posts.length; k++) {
       list.appendChild(buildPostCard(posts[k]));
     }
-
-    switchViewBookPosts();
-  }
-
-  function switchViewBookPosts() {
-    for (var i = 0; i < VIEW_IDS.length; i++) {
-      var v = byId(VIEW_IDS[i]);
-      if (v) v.hidden = (VIEW_IDS[i] !== 'view-book-posts');
-    }
-    window.scrollTo(0, 0);
+    return true;
   }
 
   /* =============================================================
@@ -849,21 +929,20 @@
     return null;
   }
 
+  // 跳转：把地址改到这篇帖子（渲染交给 enterPost）
   function openPost(id) {
-    var post = findPost(id);
-    if (!post) { showError('这篇帖子不存在或已删除'); switchView('forum'); return; }
-    state.currentPostId = id;
-    // 帖子流点进来 → postFromBook 应为 false；同书列表点进来保持 true
-    renderPostDetail(post);
-    switchViewPost();
+    go('/post/' + encodeURIComponent(id));
   }
 
-  function switchViewPost() {
-    for (var i = 0; i < VIEW_IDS.length; i++) {
-      var v = byId(VIEW_IDS[i]);
-      if (v) v.hidden = (VIEW_IDS[i] !== 'view-post');
-    }
-    window.scrollTo(0, 0);
+  // 渲染：只填内容，不切页面。帖子不存在时返回 false，由路由退回论坛。
+  // postFromBook（返回时回论坛还是回同书列表）由「从哪点进来」决定：
+  // 论坛帖子流点进来是 false，同书列表点进来保持 true。
+  function enterPost(id) {
+    var post = findPost(id);
+    if (!post) { showError('这篇帖子不存在或已删除'); return false; }
+    state.currentPostId = id;
+    renderPostDetail(post);
+    return true;
   }
 
   function renderPostDetail(post) {
@@ -964,7 +1043,7 @@
     btn.textContent = state.currentUser ? '发表' : '登录后发表';
     btn.disabled = !state.currentUser;
     btn.addEventListener('click', function () {
-      if (!state.currentUser) { switchView('login'); return; }
+      if (!state.currentUser) { go('/login'); return; }
       if (!ta.value.trim()) { showError('评论不能为空'); return; }
       post.comments.push({ id: 'c' + Date.now(), authorId: state.currentUser.id, content: ta.value.trim(), createdAt: new Date().toISOString() });
       ta.value = '';
@@ -1658,30 +1737,35 @@
     return item;
   }
 
-  function openConversation(id) {
+  function findConversation(id) {
     for (var i = 0; i < MOCK_CONVERSATIONS.length; i++) {
-      if (MOCK_CONVERSATIONS[i].id !== id) continue;
+      if (MOCK_CONVERSATIONS[i].id === id) return MOCK_CONVERSATIONS[i];
+    }
+    return null;
+  }
 
-      // 防重复：这一项正在处理中，连点不生效
-      var row = document.querySelector('.conversation-item[data-id="' + id + '"]');
-      if (row && row.classList.contains('is-busy')) return;
+  // 打开某个会话。私信页的内部状态不占地址（Day 13 决定），
+  // 所以这里只记下「进去后要展开哪一条」，渲染交给 enterMessages。
+  function openConversation(id) {
+    var conv = findConversation(id);
+    if (!conv) return;
 
-      var conv = MOCK_CONVERSATIONS[i];
-      state.currentConvId = id;
-      if (row) row.classList.add('is-busy');
+    // 防重复：这一项正在处理中，连点不生效
+    var row = document.querySelector('.conversation-item[data-id="' + id + '"]');
+    if (row && row.classList.contains('is-busy')) return;
+    if (row) row.classList.add('is-busy');
 
-      var res = markConvRead(conv);   // 打开会话 = 已读
-      renderNavBadge();
+    state.currentConvId = id;
+    state.openConvOnEnter = true;
 
-      renderChat(conv);
-      switchViewChat();
+    var res = markConvRead(conv);   // 打开会话 = 已读
+    renderNavBadge();
+    go('/messages');                // 已在私信页则原地重放，不在就跳过来
 
-      // 界面这时已经变成已读了；只有写盘失败才需要补一句提醒 ——
-      // 这一次管用，但刷新之后红点会回来。
-      if (!res || !res.ok) {
-        showError('已读状态没能存到本机：刷新页面后这个会话可能又显示未读。');
-      }
-      return;
+    // 界面这时已经变成已读了；只有写盘失败才需要补一句提醒 ——
+    // 这一次管用，但刷新之后红点会回来。
+    if (!res || !res.ok) {
+      showError('已读状态没能存到本机：刷新页面后这个会话可能又显示未读。');
     }
   }
 
@@ -1697,26 +1781,28 @@
 
   // 从任意入口发起私信：找到/新建会话并打开对话窗口
   function openChatWith(peerId, peerName) {
-    if (!state.currentUser) { switchView('login'); return; }
+    if (!state.currentUser) { go('/login'); return; }
     if (state.currentUser.id === peerId) { showError('不能给自己发私信'); return; }
     var conv = getOrCreateConversation(peerId, peerName);
     state.currentConvId = conv.id;
+    state.openConvOnEnter = true;
     var res = markConvRead(conv);   // 打开会话 = 已读
     renderNavBadge();
-    renderChat(conv);
-    switchViewChat();
+    go('/messages');
     if (!res || !res.ok) {
       showError('已读状态没能存到本机：刷新页面后这个会话可能又显示未读。');
     }
   }
 
-  function switchViewChat() {
-    // 私信详情在 view-messages 内展开，这里直接复用 view-messages
-    for (var i = 0; i < VIEW_IDS.length; i++) {
-      var v = byId(VIEW_IDS[i]);
-      if (v) v.hidden = (VIEW_IDS[i] !== 'view-messages');
-    }
-    window.scrollTo(0, 0);
+  // 渲染：进私信页。默认显示会话列表；
+  // 若是从别处点「私信 TA」过来的（openConvOnEnter），直接展开那段对话。
+  function enterMessages() {
+    var conv = null;
+    if (state.openConvOnEnter && state.currentConvId) conv = findConversation(state.currentConvId);
+    state.openConvOnEnter = false;
+    if (conv) { renderChat(conv); return; }
+    state.currentConvId = null;
+    renderConversations();
   }
 
   function renderChat(conv) {
@@ -1729,7 +1815,7 @@
     back.type = 'button';
     back.className = 'btn btn-ghost';
     back.textContent = '← 返回列表';
-    back.addEventListener('click', function () { renderConversations(); });
+    back.addEventListener('click', function () { state.currentConvId = null; state.openConvOnEnter = false; renderConversations(); });
     header.appendChild(back);
     var title = document.createElement('strong');
     title.textContent = conv.peerName;
@@ -1887,7 +1973,7 @@
       clearError();
       clearSuccess();
       updateNavUser();
-      switchView('home');
+      go('/');
       showSuccess('注册成功，欢迎 ' + newUser.username + '！');
       return;
     }
@@ -1903,7 +1989,7 @@
     clearError();
     clearSuccess();
     updateNavUser();
-    switchView('home');
+    go('/');
     showSuccess('欢迎回来，' + found.username + '！');
   }
 
@@ -2084,7 +2170,7 @@
       logout.addEventListener('click', function () {
         state.currentUser = null;
         updateNavUser();
-        switchView('home');
+        go('/');
       });
       card.appendChild(logout);
     }
@@ -2156,7 +2242,7 @@
       btn.className = 'btn btn-primary';
       btn.type = 'button';
       btn.textContent = '去登录 / 注册';
-      btn.addEventListener('click', function () { switchView('login'); });
+      btn.addEventListener('click', function () { go('/login'); });
       empty.appendChild(btn);
       box.appendChild(empty);
       return;
@@ -2183,20 +2269,18 @@
   }
 
   // 打开别人主页
+  // 跳转：把地址改到这个人的主页（渲染交给 enterProfile）
   function openProfile(userId) {
-    var user = userById(userId);
-    if (!user) { showError('这个用户不存在'); return; }
-    state.profileUserId = userId;
-    renderProfile(user);
-    switchViewProfile();
+    go('/user/' + encodeURIComponent(userId));
   }
 
-  function switchViewProfile() {
-    for (var i = 0; i < VIEW_IDS.length; i++) {
-      var v = byId(VIEW_IDS[i]);
-      if (v) v.hidden = (VIEW_IDS[i] !== 'view-profile');
-    }
-    window.scrollTo(0, 0);
+  // 渲染：只填内容，不切页面
+  function enterProfile(userId) {
+    var user = userById(userId);
+    if (!user) { showError('这个用户不存在'); return false; }
+    state.profileUserId = userId;
+    renderProfile(user);
+    return true;
   }
 
   function renderProfile(user) {
@@ -2229,7 +2313,7 @@
   function bindEvents() {
     // 发帖按钮：打开发帖弹窗（登录后才可发）
     byId('btn-new-post').addEventListener('click', function () {
-      if (!state.currentUser) { switchView('login'); return; }
+      if (!state.currentUser) { go('/login'); return; }
       openComposer();
     });
 
@@ -2246,14 +2330,24 @@
     byId('hot-tabs').addEventListener('click', function (e) {
       var btn = e.target.closest ? e.target.closest('.filter') : null;
       if (!btn) return;
-      state.currentRange = btn.getAttribute('data-range');
+      var range = btn.getAttribute('data-range');
+      if (!range || range === state.currentRange) return;   // 点当前档不重来一遍（Day 13）
+      state.currentRange = range;
       var tabs = byId('hot-tabs').querySelectorAll('.filter');
       for (var i = 0; i < tabs.length; i++) {
         if (tabs[i] === btn) tabs[i].classList.add('is-active');
         else tabs[i].classList.remove('is-active');
       }
-      // 本轮 mock：三档数据暂用同一份；后端就绪后按 range 拉不同窗口
-      renderHot();
+      // 加载态：先骨架、过一会儿再出内容（本地演示，说明见 app.js 的 showSkeleton）
+      byId('hot-empty').hidden = true;
+      if (window.AppViews.LOADING_MS <= 0) { renderHot(); return; }   // 测试环境：不演加载
+      window.AppViews.showSkeleton(byId('hot-list'), 3);
+      if (state.hotTimer) window.clearTimeout(state.hotTimer);
+      state.hotTimer = window.setTimeout(function () {
+        state.hotTimer = null;
+        // 本轮 mock：三档数据暂用同一份；后端就绪后按 range 拉不同窗口
+        renderHot();
+      }, window.AppViews.LOADING_MS);
     });
 
     // 帖子流点击进详情（收藏按钮自己处理，别连带跳进详情页）
@@ -2291,13 +2385,13 @@
       if (state.postFromBook && state.lastBookTitle) {
         openBookPosts(state.lastBookTitle);
       } else {
-        switchView('forum');
+        go('/forum');
       }
     });
-    byId('btn-book-posts-back').addEventListener('click', function () { state.postFromBook = false; switchView('forum'); });
+    byId('btn-book-posts-back').addEventListener('click', function () { state.postFromBook = false; go('/forum'); });
 
     // 个人主页返回（回论坛）
-    byId('btn-profile-back').addEventListener('click', function () { switchView('forum'); });
+    byId('btn-profile-back').addEventListener('click', function () { go('/forum'); });
 
     // 会话列表点击进对话
     byId('conversation-list').addEventListener('click', function (e) {
@@ -2368,9 +2462,10 @@
     bindNav();
     bindEvents();
     updateNavUser();
-    // 默认停在首页（书单），与 app.js 的初始视图一致。
-    // keepError: 别擦掉 app.js 刚设的「存储不可用」等全局告警（Day 12 修复）。
-    switchView('home', { keepError: true });
+    // 按地址栏的 hash 落到对应页面（Day 13）。
+    // 参数 true = 启动阶段：不擦掉 app.js 刚设的「存储不可用」等全局告警
+    //（Day 12 修复的 bug，别改回去）。
+    applyRoute(true);
   }
 
   init();
