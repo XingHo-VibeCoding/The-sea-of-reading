@@ -681,6 +681,26 @@
   /* ---------------- 阅读进度（AC-11 ~ AC-14） ---------------- */
 
   // 保存进度：页数不合法就不写进去，并说明原因（AC-13）
+  /* ---------------- 保存成功后的按钮反馈（Day 14）----------------
+     Day 14 真人测试发现：点「保存进度」后按钮本身毫无变化，对方盯着按钮
+     等回应，以为没保存上（原来的反馈在下面的百分比/进度条上，而他的视线
+     在按钮上）。这里让按钮自己回一句「已保存」，1.5 秒后恢复。 */
+  function flashSaved(btn) {
+    if (!btn || !btn.classList) return;
+    if (btn._savedTimer) window.clearTimeout(btn._savedTimer);
+    var orig = btn.getAttribute('data-saved-orig');
+    if (!orig) { orig = btn.textContent; btn.setAttribute('data-saved-orig', orig); }
+    btn.textContent = '已保存 ✓';
+    btn.disabled = true;
+    btn.classList.add('is-saved');
+    btn._savedTimer = window.setTimeout(function () {
+      btn.textContent = orig;
+      btn.disabled = false;
+      btn.classList.remove('is-saved');
+      btn._savedTimer = null;
+    }, 1500);
+  }
+
   el.btnSaveProgress.addEventListener('click', function () {
     if (!state.currentBookId) return;
 
@@ -689,6 +709,7 @@
 
     clearError();
     renderDetail(res.data);          // 页数与百分比立刻刷新（AC-11 / AC-12）
+    flashSaved(el.btnSaveProgress);  // 按钮自己也回一句（Day 14 用户测试）
   });
 
   // 输入框里直接回车，等同于点「保存进度」

@@ -82,6 +82,13 @@ h3 { font-size: 15px; margin: 0; }
 .btn-danger { color: var(--danger); border-color: #eccac6; background: #fff; }
 .btn-danger:hover { background: var(--danger-bg); }
 
+/* 「已保存」的瞬时反馈（Day 14 用户测试）：
+   原来点「保存进度」只有下面的百分比/进度条在变，按钮本身毫无反应，
+   第一次用的人盯着按钮看，以为没保存上。这里让按钮自己回一句，1.5 秒后由 JS 恢复。 */
+.btn.is-saved {
+  background: var(--success); border-color: var(--success); color: #fff;
+}
+
 /* 键盘焦点可见（Tab 键导航时）：与 home.css 的重试按钮同一套规则 */
 .btn:focus-visible,
 .filter:focus-visible {
