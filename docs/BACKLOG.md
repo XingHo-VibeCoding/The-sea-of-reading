@@ -54,7 +54,7 @@
 ## 2. 加 `.nojekyll` 让 `skills/` 目录在线可访问（发现于：2026-10-11 · Day 12 收尾）
 
 **现象**：Day 12 提交后，在线站点上
-`https://xingho-vibecoding.github.io/The-sea-of-reading/skills/filter-interaction-check/SKILL.md`
+`https://xingho-vibecoding.github.io/whale-fall-letters/skills/filter-interaction-check/SKILL.md`
 返回 **404**；而同一次提交里 `docs/BACKLOG.md`、`docs/skill-runs/…md` 都是 200。
 
 **根因**（实测确认）：

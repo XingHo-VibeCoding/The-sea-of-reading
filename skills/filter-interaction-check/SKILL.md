@@ -1,6 +1,6 @@
 ---
 name: filter-interaction-check
-description: 给「阅读的海洋」书单页的状态筛选做自检。触发场景：改了 app.js 的 renderList / 筛选逻辑，或改了 index.html 的 #filters / #filter-empty，或改了 styles.css 里 .filter 相关样式；需要确认筛选的三种情况（有结果 / 无结果 / 清空恢复）都对、键盘能操作、对比度达标时使用。
+description: 给「鲸落书简」书单页的状态筛选做自检。触发场景：改了 app.js 的 renderList / 筛选逻辑，或改了 index.html 的 #filters / #filter-empty，或改了 styles.css 里 .filter 相关样式；需要确认筛选的三种情况（有结果 / 无结果 / 清空恢复）都对、键盘能操作、对比度达标时使用。
 agent_created: true
 ---
 

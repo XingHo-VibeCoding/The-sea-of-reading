@@ -1,8 +1,8 @@
-# Git 上手清单 · 阅读的海洋（The sea of reading）
+# Git 上手清单 · 鲸落书简（whale-fall-letters）
 
 > 面向 Git 初学者。每条都写明：**在哪执行 → 做什么 → 成功看到什么**。  
 > 项目目录（下面所有命令都在这里执行）：  
-> `C:\Users\张俊\WorkBuddy\my-project\The sea of reading`
+> `C:\Users\张俊\WorkBuddy\my-project\whale-fall-letters`
 
 
 
@@ -17,7 +17,7 @@
 | npm          | ✅ 10.9.7                                                                           |
 | Python       | ✅ 3.13.14                                                                          |
 | 本地仓库         | ✅ 已初始化，分支 `main`                                                                   |
-| 远程仓库 origin  | ✅ 已指向 `git@github.com:XingHo-VibeCoding/The-sea-of-reading.git`（SSH 方式，自动走 443 端口） |
+| 远程仓库 origin  | ✅ 已指向 `git@github.com:XingHo-VibeCoding/whale-fall-letters.git`（SSH 方式，自动走 443 端口） |
 | 提交身份         | ✅ `张俊 <1145282165@qq.com>`                                                         |
 | `.gitignore` | ✅ 已就绪，规则已实测生效                                                                      |
 | 首次提交         | ✅ 已完成（commit `db0de6d`）                                                            |
@@ -62,7 +62,7 @@ CRYPT_E_NO_REVOCATION_CHECK (0x80092012) - 吊销功能无法检查证书是否�
 **第 1 步 · 推送**
 
 ```bash
-cd "C:/Users/张俊/WorkBuddy/my-project/The sea of reading"
+cd "C:/Users/张俊/WorkBuddy/my-project/whale-fall-letters"
 git push -u origin main
 ```
 
@@ -72,7 +72,7 @@ git push -u origin main
 | 成功看到什么 | 弹出 GitHub 登录窗口 → 用浏览器登录后授权。接着终端输出类似：  
 `Enumerating objects: 4, done.`  
 `Writing objects: 100% (4/4), done.`  
-`To https://github.com/XingHo-VibeCoding/The-sea-of-reading.git`  
+`To https://github.com/XingHo-VibeCoding/whale-fall-letters.git`  
 ` * [new branch]      main -> main` |
 
 看到 `* [new branch] main -> main` 就是成功了。
@@ -101,7 +101,7 @@ cat ~/.ssh/id_ed25519.pub
 **第 3 步 · 把 22 端口换成 443**（22 被网络挡了，443 实测通）
 
 ```bash
-git remote set-url origin ssh://git@ssh.github.com:443/XingHo-VibeCoding/The-sea-of-reading.git
+git remote set-url origin ssh://git@ssh.github.com:443/XingHo-VibeCoding/whale-fall-letters.git
 ```
 
 |        |                                                                   |
@@ -130,7 +130,7 @@ git push -u origin main
 
 ## 三、验证：确认敏感文件没上去
 
-浏览器打开 `https://github.com/XingHo-VibeCoding/The-sea-of-reading`，确认：
+浏览器打开 `https://github.com/XingHo-VibeCoding/whale-fall-letters`，确认：
 
 - [x] 能看到 **`README.md`**、**`.gitignore`**、**`GIT-CHECKLIST.md`** 三个文件
 - [x] 右上角显示分支 **`main`**、提交数 **2 Commits**

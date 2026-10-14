@@ -1,4 +1,4 @@
-# 阅读的海洋 · The sea of reading
+# 鲸落书简 · whale-fall-letters
 
 > 记录你的阅读，也遇见读同一本书的人 —— 让你遨游在书籍的海洋里。
 
@@ -66,7 +66,7 @@
 
 项目已部署在 GitHub Pages（2026-09-30 开启），打开这个网址就能用——**手机、别人的电脑都可以**：
 
-**<https://xingho-vibecoding.github.io/The-sea-of-reading/>**
+**<https://xingho-vibecoding.github.io/whale-fall-letters/>**
 
 > 注意：数据存在「打开页面的那台设备」自己的浏览器里。你手机上记的和电脑上记的**互不相通**，也看不到别人设备上的书。多人共用一份数据，要等后端接上（计划中）。
 
@@ -105,7 +105,7 @@ python -m http.server 8000
 ## 目录结构
 
 ```
-The sea of reading/
+whale-fall-letters/
 ├── index.html          # 主页面：全局导航 + 多视图（书架 / 论坛 / 私信 / 我的 / 登录 / 详情…）
 ├── styles.css          # 全部样式，零外部资源
 ├── store.js            # 数据层：唯一读写浏览器存储的地方（书单 / 笔记）

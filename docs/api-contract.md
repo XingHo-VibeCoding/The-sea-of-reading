@@ -62,7 +62,7 @@
 ```json
 {
   "ok": true,
-  "service": "the-sea-of-reading",
+  "service": "whale-fall-letters",
   "time": "<服务器当前时间 ISO 8601>"
 }
 ```

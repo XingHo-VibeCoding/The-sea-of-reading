@@ -4,7 +4,7 @@
 （不是测「功能有没有 bug」，是测「找不找得到」）  
 **被测者**：\_____\_（写个称呼就行）  
 **设备**：对方自己的手机或电脑  
-**网址**：<https://xingho-vibecoding.github.io/The-sea-of-reading/>  
+**网址**：<https://xingho-vibecoding.github.io/whale-fall-letters/>  
 **时长**：15 分钟左右
 
 > ⚠️ 对方打开是**空书架**（在线版和你本机数据不互通）——  

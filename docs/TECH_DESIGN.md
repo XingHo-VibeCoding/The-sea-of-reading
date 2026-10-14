@@ -1,4 +1,4 @@
-# 阅读的海洋 · 技术设计（TECH_DESIGN.md）
+# 鲸落书简 · 技术设计（TECH_DESIGN.md）
 
 > **日期**：2026-09-22（Day 5）  
 > **依据**：`docs/PRD.md`（Day 4 定稿，23 条验收标准）  

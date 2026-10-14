@@ -19,7 +19,7 @@ const server = http.createServer((req, res) => {
   res.end(
     JSON.stringify({
       ok: true,
-      service: "the-sea-of-reading",
+      service: "whale-fall-letters",
       time: new Date().toISOString(),
     })
   );
