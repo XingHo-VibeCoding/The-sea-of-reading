@@ -30,6 +30,9 @@
  */
 
 const http = require("http");
+// 数据访问层（Day 19 拆分）：所有查库/写库的操作都在 db.js，
+// 本文件只负责「收请求 → 校验 → 调 db → 回 JSON」，不再直接 fetch 数据库。
+const db = require("./db");
 
 const PORT = 9000; // CloudBase HTTP 型函数的默认端口，别改
 
@@ -154,60 +157,9 @@ function newId(prefix) {
   return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 }
 
-// ---------- 调 PostgreSQL 的 HTTP API（PostgREST 风格） ----------
-
-// 读：查 books 表。驼峰列名（createdAt 等）在库里是带双引号建的（Day 16 铁律），
-// PostgREST 会原样返回这些键。title/author 全小写无此问题。
-async function fetchBooks(limit, baseUrl, apiKey) {
-  const params = new URLSearchParams({ select: "*", order: "createdAt.desc" });
-  if (limit !== undefined) params.set("limit", String(limit));
-
-  const resp = await fetch(`${baseUrl}/v1/rdb/rest/books?${params}`, {
-    headers: { Authorization: `Bearer ${apiKey}` },
-    signal: AbortSignal.timeout(8000), // 8 秒超时：数据源卡住时尽快给用户一个明确错误
-  });
-  if (!resp.ok) {
-    throw new Error(`数据源返回 HTTP ${resp.status}`);
-  }
-  return resp.json(); // PostgREST 查询返回行对象数组
-}
-
-// 查重（Day 18）：把现有书的 title/author 拉回来逐条比对。
-// 书单表很小（个位数到几十行），不值得为此造复杂查询；中文书名放 URL
-// 参数里还要做编码，多一个坑，所以选「全拉回来在内存里比」。
-// 口径（大帅拍板）：书名+作者都相同（trim 后）即算重复，其他字段不管——
-// 同一本书补了封面再存也会被拒。
-async function findDuplicate(title, author, baseUrl, apiKey) {
-  const params = new URLSearchParams({ select: "id,title,author" });
-  const resp = await fetch(`${baseUrl}/v1/rdb/rest/books?${params}`, {
-    headers: { Authorization: `Bearer ${apiKey}` },
-    signal: AbortSignal.timeout(8000),
-  });
-  if (!resp.ok) {
-    throw new Error(`数据源返回 HTTP ${resp.status}`);
-  }
-  const rows = await resp.json();
-  return rows.find(
-    (r) => r.title.trim() === title && (r.author || "").trim() === author
-  );
-}
-
-// 写：往 books 表插一行。body 就是要插入的行对象（键=驼峰列名），
-// HTTP 201 Created = 插入成功（PostgREST 约定）。
-async function insertBook(row, baseUrl, apiKey) {
-  const resp = await fetch(`${baseUrl}/v1/rdb/rest/books`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(row),
-    signal: AbortSignal.timeout(8000),
-  });
-  if (!resp.ok) {
-    throw new Error(`数据源返回 HTTP ${resp.status}`);
-  }
-}
+// ---------- 数据访问层已拆到 db.js（Day 19） ----------
+// 原 fetchBooks / findDuplicate / insertBook 三个函数原样搬去 db.js，
+// 本文件通过文件开头的 require("./db") 调用，函数体一行逻辑没改。
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, "http://localhost");
@@ -229,7 +181,7 @@ const server = http.createServer((req, res) => {
       return fail(res, "服务端未配置数据源凭证（环境变量 PG_API_KEY），请联系站长");
     }
 
-    fetchBooks(limit, baseUrl, apiKey)
+    db.fetchBooks(limit, baseUrl, apiKey)
       .then((rows) => {
         log("GET", "/api/books", "200", `返回 ${rows.length} 本`);
         send(res, { ok: true, data: { books: rows } });
@@ -271,7 +223,7 @@ const server = http.createServer((req, res) => {
         }
 
         // 第 3 关：查重（书名+作者相同 → 拒绝，防重复提交）
-        findDuplicate(row.title, row.author, baseUrl, apiKey)
+        db.findDuplicate(row.title, row.author, baseUrl, apiKey)
           .then((dup) => {
             if (dup) {
               fail(res, "这本书已经在书单里了，不用重复添加");
@@ -287,7 +239,7 @@ const server = http.createServer((req, res) => {
               finishedAt: null,
               createdAt: new Date().toISOString(),
             };
-            insertBook(book, baseUrl, apiKey)
+            db.insertBook(book, baseUrl, apiKey)
               .then(() => {
                 log("POST", "/api/books", "200", `新增 ${book.id}《${book.title}》`);
                 // 契约 3.2：返回 { ok: true, data: { book: {...} } }
