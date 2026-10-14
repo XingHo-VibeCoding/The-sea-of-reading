@@ -747,3 +747,50 @@ textarea { width: 100%; resize: vertical; }
   .site-nav-auth { margin-left: auto; }
 }
 
+/* ============================================================
+   Day 17 · 接口数据（只读演示视图）
+   表格用真库返回的数据，样式保持和站内卡片一致的暖纸感
+   ============================================================ */
+
+#view-api-demo .topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+#api-demo-status { min-height: 1.7em; }
+#api-demo-status.is-error { color: var(--danger); }  /* 错误行实测 5.95:1，达标 ≥4.5（--danger #b3261e 对 --paper #f6f4f1） */
+
+.api-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  font-size: 14px;
+}
+
+.api-table th,
+.api-table td {
+  border: 1px solid var(--line);
+  padding: 9px 12px;
+  text-align: left;
+}
+
+.api-table th {
+  background: var(--success-bg);
+  color: var(--ink);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.api-table td { color: var(--ink-soft); }
+.api-table td:first-child { color: var(--ink); font-weight: 500; }
+
+@media (max-width: 560px) {
+  .api-table th, .api-table td { padding: 7px 8px; font-size: 13px; }
+}
+

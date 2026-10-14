@@ -15,10 +15,12 @@
 
 | 环境 | 基地址 |
 |---|---|
-| CloudBase HTTP 网关（公网） | `https://reading-sea-d7gd8i7o7867304ae-1385227197.ap-shanghai.app.tcloudbase.com` |
+| CloudBase HTTP 网关（公网） | `https://reading-sea-d7gd8l7o78b7304ae-1385227197.ap-shanghai.app.tcloudbase.com` |
 
-> ⚠️ Day 15 备注：该域名当前访问返回 404 INVALID_ENV（腾讯侧环境公网服务开通问题，
-> 已在云开发社区提 Issue #1588 追踪）。开通前所有接口无法公网验证，属已知阻塞，不影响契约本身。
+> ⚠️ 更正（Day 17）：此前记录的域名把环境 ID 抄错了两处（小写 l 抄成 i、字母 b 抄成 6），
+> 导致访问一直返回 INVALID_ENV，并被误判成「腾讯侧关闭了公网服务」。
+> 环境服务器区分大小写（实测大写 I 返 421、小写 i 返 404），正确 ID 以本文件为准：
+> `reading-sea-d7gd8l7o78b7304ae`。公网服务本身一直是通的，无需工单。
 
 ### 1.2 响应形状（所有接口统一）
 
@@ -100,11 +102,13 @@
 
 > 阅读进度百分比**不存储**，由前端按 `currentPage / totalPages` 实时计算（PRD 3.2）。
 
-### 🕐 3.1 GET /api/books —— 书单列表
+### ✅ 3.1 GET /api/books —— 书单列表
 
-- 请求参数：无（本期单用户）
+- 请求参数：无（本期单用户）；余力加练（Day 17）：可选 `?limit=N`，正整数、上限 100，不传 = 返回全部
 - 响应 data：`{ "books": [ <book>, ... ] }`，按创建时间倒序
-- 错误：无业务错误分支
+- 错误：无业务错误分支（limit 非法时返回 `{ok:false}` 的中文提示）
+- 实现：`cloud/functions/books/index.js`（Day 17，HTTP 型云函数，经网关调 PG HTTP API 读真库，凭证走环境变量 PG_API_KEY）
+- 验证（Day 17）：公网 200 返回 5 本真书；控制台把 book-002 的 currentPage 改 200 后刷新接口同步变化；线上页面 `#/api-demo` 显示真库数据
 
 ### 🕐 3.2 POST /api/books —— 新增书籍
 
@@ -150,4 +154,6 @@
 
 - 社区/论坛/评论/私信接口 —— 做到社区层时再登记，避免提前设计返工
 - 登录/用户接口 —— 第 3 周暂不涉及
-- 跨域（CORS）配置 —— Day 20 在 HTTP 网关处理，与契约无关
+- 跨域（CORS）配置 —— **Day 17 已提前在 HTTP 网关路由上启用**（实测有效）；
+  函数内一律不再加跨域头：两边都加时网关会把两个值拼成 `域名,*` 一个头，
+  浏览器直接拒绝（Failed to fetch）。跨域头全站只留网关一处

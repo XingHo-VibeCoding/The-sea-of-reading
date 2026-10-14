@@ -34,6 +34,7 @@
       <button class="site-nav-link" type="button" data-nav="forum">论坛</button>
       <button class="site-nav-link" type="button" data-nav="messages">私信</button>
       <button class="site-nav-link" type="button" data-nav="me">我的</button>
+      <button class="site-nav-link" type="button" data-nav="api">接口数据</button>
     </nav>
     <div class="site-nav-auth">
       <button id="btn-nav-login" class="btn btn-primary btn-sm" type="button" data-nav="login">登录 / 注册</button>
@@ -389,6 +390,25 @@
     </form>
   </div>
 </div>
+
+<!-- ============================================================
+     Day 17 · 接口数据（只读演示视图）
+     这是什么：GET /api/books（docs/api-contract.md 3.1）的可视化验证页。
+     数据不是 localStorage 里的本地书单，而是云函数从 CloudBase 真库
+     （books 表）读出来的 —— 用来证明「真实数据入库且接口能读出」。
+     只读：这里不提供任何写操作（写入接口 Day 18 起）。
+     ============================================================ -->
+<section id="view-api-demo" class="view" hidden>
+  <header class="topbar">
+    <div>
+      <h2>接口数据 <span class="muted">· 只读演示</span></h2>
+      <p class="muted">GET /api/books —— 云函数从真库 books 表读出，不是本地假数据</p>
+    </div>
+    <button id="btn-api-demo-refresh" class="btn btn-ghost" type="button">刷新</button>
+  </header>
+  <p id="api-demo-status" class="muted" role="status"></p>
+  <div id="api-demo-table"></div>
+</section>
 
 <!-- ============================================================
      ⚠️ 只能用普通 <script>，禁止 type="module" / import / export

@@ -287,7 +287,7 @@
    *   3. enterXxx()   只往页面里填内容，绝不自己切页面
    * ============================================================= */
 
-  var VIEW_IDS = ['view-list', 'view-detail', 'view-forum', 'view-post', 'view-book-posts', 'view-messages', 'view-me', 'view-auth', 'view-profile'];
+  var VIEW_IDS = ['view-list', 'view-detail', 'view-forum', 'view-post', 'view-book-posts', 'view-messages', 'view-me', 'view-auth', 'view-profile', 'view-api-demo'];
 
   // 导航栏按钮的 data-nav 值 → 路由路径
   var NAV_PATH = {
@@ -295,7 +295,8 @@
     forum: '/forum',
     messages: '/messages',
     me: '/me',
-    login: '/login'
+    login: '/login',
+    api: '/api-demo'   // Day 17：接口数据只读演示页
   };
 
   // 地址里的参数可能是编码过的（中文书名），解不开就按原样用，不要抛错
@@ -313,6 +314,7 @@
     { re: /^\/messages$/, view: 'view-messages', nav: 'messages', enter: function () { enterMessages(); return true; } },
     { re: /^\/me$/, view: 'view-me', nav: 'me', enter: function () { renderMe(); return true; } },
     { re: /^\/login$/, view: 'view-auth', nav: 'login', enter: function () { renderAuth(); return true; } },
+    { re: /^\/api-demo$/, view: 'view-api-demo', nav: 'api', enter: function () { enterApiDemo(); return true; } },
     { re: /^\/(shelf)?$/, view: 'view-list', nav: 'home', enter: function () { window.AppViews.enterList(); return true; } }
   ];
 
@@ -2451,11 +2453,130 @@
       if (state.authMode === 'register') refreshAvatarPreview();
     });
 
+    // Day 17：接口数据页的「刷新」按钮。
+    // ⚠️ 必须判空：_ac_test/_d2d_test 的迷你 DOM 里没有这个节点，判空才不会把测试整组带崩
+    var apiDemoRefresh = byId('btn-api-demo-refresh');
+    if (apiDemoRefresh) {
+      apiDemoRefresh.addEventListener('click', function () { loadApiDemo(); });
+    }
+
     // 提交登录/注册
     byId('form-auth').addEventListener('submit', function (e) {
       e.preventDefault();
       doAuth();
     });
+  }
+
+  /* =============================================================
+   * Day 17 · 接口数据（只读演示）
+   * -------------------------------------------------------------
+   * 这是什么：GET /api/books（api-contract.md 3.1）的可视化验证。
+   * 数据链路：浏览器 → CloudBase HTTP 网关 → books 云函数 →
+   *           PG HTTP API → 真库 books 表。不是 localStorage 假数据。
+   * 只读：本视图没有任何写操作（写入接口 Day 18 起）。
+   * 注意：地址是硬编码的网关地址（契约 1.1），跨域头由云函数返回
+   * （Day 17 临时方案，Day 20 迁网关配置）。
+   * 测试钩子：本地验证时可用 window.__API_DEMO_URL__ 覆盖地址
+   * （与 app.js 的 window.__LOADING_MS__ 同一套路，生产代码不设它）。
+   * ============================================================= */
+  var API_DEMO_URL = typeof window.__API_DEMO_URL__ === 'string'
+    ? window.__API_DEMO_URL__
+    : 'https://reading-sea-d7gd8l7o78b7304ae-1385227197.ap-shanghai.app.tcloudbase.com/api/books';
+  // 状态中文文案：与 app.js 的 STATUS_TEXT 保持同值（app.js 里那份不对外暴露，这里就地定义）
+  var API_DEMO_STATUS = { want: '想读', reading: '在读', finished: '已读' };
+
+  function enterApiDemo() {
+    // 铁规矩：enterXxx 只填内容，不切页面
+    var t = byId('api-demo-table');
+    if (t) t.textContent = '';
+    setStatus('正在从真库加载…', false);
+    loadApiDemo();
+  }
+
+  function setStatus(text, isError) {
+    var s = byId('api-demo-status');
+    if (!s) return;
+    s.textContent = text;
+    s.classList.toggle('is-error', !!isError);
+  }
+
+  function loadApiDemo() {
+    fetch(API_DEMO_URL)
+      .then(function (r) {
+        return r.json().then(function (body) { return { httpStatus: r.status, body: body }; });
+      })
+      .then(function (res) {
+        // 契约 1.2：成败只看 ok 字段；失败时 error 是给人看的中文
+        if (!res.body || res.body.ok !== true) {
+          throw new Error((res.body && res.body.error) || ('HTTP ' + res.httpStatus));
+        }
+        renderApiDemoTable(res.body.data.books || []);
+      })
+      .catch(function (err) {
+        setStatus('接口暂时读不到：' + err.message + '（本地书单不受影响）', true);
+      });
+  }
+
+  function renderApiDemoTable(books) {
+    var t = byId('api-demo-table');
+    if (!t) return;
+    setStatus('真库返回 ' + books.length + ' 本书 · ' + new Date().toLocaleTimeString() + ' 抓取', false);
+
+    if (!books.length) {
+      var p = document.createElement('p');
+      p.className = 'muted';
+      p.textContent = '真库里还没有书。去控制台 SQL 编辑器跑一遍 db/seed.sql 就有数据了。';
+      t.appendChild(p);
+      return;
+    }
+
+    // 全部用 createElement + textContent（和社区层一致，不拼 HTML 字符串，天然防注入）
+    var table = document.createElement('table');
+    table.className = 'api-table';
+
+    var thead = document.createElement('thead');
+    var headRow = document.createElement('tr');
+    ['书名', '作者', '状态', '进度（页）', '创建日期'].forEach(function (label) {
+      var th = document.createElement('th');
+      th.textContent = label;
+      th.scope = 'col';
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
+    books.forEach(function (b) {
+      var tr = document.createElement('tr');
+
+      var tdTitle = document.createElement('td');
+      tdTitle.textContent = b.title || '（无书名）';
+      tr.appendChild(tdTitle);
+
+      var tdAuthor = document.createElement('td');
+      tdAuthor.textContent = b.author || '—';
+      tr.appendChild(tdAuthor);
+
+      var tdStatus = document.createElement('td');
+      tdStatus.textContent = API_DEMO_STATUS[b.status] || b.status || '—';
+      tr.appendChild(tdStatus);
+
+      var tdProgress = document.createElement('td');
+      tdProgress.textContent = (b.currentPage == null || b.totalPages == null)
+        ? '—'
+        : (b.currentPage + ' / ' + b.totalPages);
+      tr.appendChild(tdProgress);
+
+      var tdDate = document.createElement('td');
+      tdDate.textContent = b.createdAt ? String(b.createdAt).slice(0, 10) : '—';
+      tr.appendChild(tdDate);
+
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+
+    t.textContent = '';
+    t.appendChild(table);
   }
 
   function init() {
