@@ -2474,21 +2474,35 @@
    * 数据链路：浏览器 → CloudBase HTTP 网关 → books 云函数 →
    *           PG HTTP API → 真库 books 表。不是 localStorage 假数据。
    * 只读：本视图没有任何写操作（写入接口 Day 18 起）。
-   * 注意：地址是硬编码的网关地址（契约 1.1），跨域头由云函数返回
-   * （Day 17 临时方案，Day 20 迁网关配置）。
+   * 注意：地址是硬编码的网关地址（契约 1.1）。跨域由 HTTP 网关放行
+   * （Day 20 实测：带本环境静态托管域名发 GET，网关回 access-control-allow-origin，
+   *  OPTIONS 预检 204 放行 POST；GitHub Pages 域名不在白名单，分享链接用 CloudBase）。
+   * 旧地址 …-1385227197.ap-shanghai.app.tcloudbase.com（带地域段）Day 19 起报
+   *  INVALID_ENV，已弃用——域名一律从控制台复制，不许手抄。
    * 测试钩子：本地验证时可用 window.__API_DEMO_URL__ 覆盖地址
    * （与 app.js 的 window.__LOADING_MS__ 同一套路，生产代码不设它）。
    * ============================================================= */
   var API_DEMO_URL = typeof window.__API_DEMO_URL__ === 'string'
     ? window.__API_DEMO_URL__
-    : 'https://reading-sea-d7gd8l7o78b7304ae-1385227197.ap-shanghai.app.tcloudbase.com/api/books';
+    : 'https://reading-sea-d7gd8l7o78b7304ae.service.tcloudbase.com/api/books';
   // 状态中文文案：与 app.js 的 STATUS_TEXT 保持同值（app.js 里那份不对外暴露，这里就地定义）
   var API_DEMO_STATUS = { want: '想读', reading: '在读', finished: '已读' };
+  // Day 20 余力加练：检查台的「最后更新时间」。只在成功抓取后更新，
+  // 失败时保留上一次的成功时间；存模块变量是为了切走再切回来不丢。
+  var apiDemoLastUpdated = '';
+
+  function setApiDemoUpdated() {
+    apiDemoLastUpdated = '最后更新：' + new Date().toLocaleString();
+    var u = byId('api-demo-updated');
+    if (u) u.textContent = apiDemoLastUpdated;
+  }
 
   function enterApiDemo() {
     // 铁规矩：enterXxx 只填内容，不切页面
     var t = byId('api-demo-table');
     if (t) t.textContent = '';
+    var u = byId('api-demo-updated');
+    if (u) u.textContent = apiDemoLastUpdated; // 先还原上次的成功时间，抓取成功后再刷新
     setStatus('正在从真库加载…', false);
     loadApiDemo();
   }
@@ -2521,6 +2535,7 @@
     var t = byId('api-demo-table');
     if (!t) return;
     setStatus('真库返回 ' + books.length + ' 本书 · ' + new Date().toLocaleTimeString() + ' 抓取', false);
+    setApiDemoUpdated(); // Day 20 余力：成功抓取才刷新「最后更新时间」
 
     if (!books.length) {
       var p = document.createElement('p');
