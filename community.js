@@ -312,10 +312,10 @@
     { re: /^\/user\/([^\/]+)$/, view: 'view-profile', nav: null, fallback: '/forum', enter: function (m) { return enterProfile(decodeParam(m[1])); } },
     { re: /^\/forum$/, view: 'view-forum', nav: 'forum', enter: function () { renderForum(); return true; } },
     { re: /^\/messages$/, view: 'view-messages', nav: 'messages', enter: function () { enterMessages(); return true; } },
-    { re: /^\/me$/, view: 'view-me', nav: 'me', enter: function () { renderMe(); return true; } },
+    { re: /^\/me$/, view: 'view-me', nav: 'me', enter: function () { renderMe(); renderGuard(); return true; } },
     { re: /^\/login$/, view: 'view-auth', nav: 'login', enter: function () { renderAuth(); return true; } },
     { re: /^\/api-demo$/, view: 'view-api-demo', nav: 'api', enter: function () { enterApiDemo(); return true; } },
-    { re: /^\/(shelf)?$/, view: 'view-list', nav: 'home', enter: function () { window.AppViews.enterList(); return true; } }
+    { re: /^\/(shelf)?$/, view: 'view-list', nav: 'home', enter: function () { window.AppViews.enterList(); renderGuard(); return true; } }
   ];
 
   function parseRoute(hash) {
@@ -2594,10 +2594,296 @@
     t.appendChild(table);
   }
 
+  /* =============================================================
+   * Day 20+ · 星海模块（守护鲸养成 / 形态图鉴 / 数据小卡 / 今日一句）
+   * -------------------------------------------------------------
+   * 干什么：把「书架里有多少本书」翻译成鲸的形态，一处数据驱动四处显示——
+   *   ① 首页守护鲸面板：形态徽章 + 体型 + 装备 + 进化文案 + 进度提示
+   *   ② 我的页形态图鉴：两段成就墙（1~30 本 / 双鲸纪元）的点亮
+   *   ③ 首页数据小卡：在读 / 书简 / 藏书，全部是 store.js 的真数据
+   *   ④ 首页今日一句：每次打开随机一句读书名言
+   * 数据来源：Store.listBooks / Store.countNotes，**零新增存储键**。
+   * 进化分两阶段：1~30 本第一头鲸长到「完全体 · 鲸星」（25 本封顶，
+   *   30 本为阶段终点）；31 本起第二头鲸以完全体为起点继续升级（双鲸纪元）。
+   * 触发时机：首次加载 / 进首页 / 进我的 / 任何书籍与笔记的写操作之后。
+   * 与预览稿的区别：这里没有演示按钮，形态完全由真实数据推导。
+   * 测试友好：所有 DOM 查找都判空（_ac_test / _d2d_test 的迷你 DOM 里
+   *   没有这些节点，判空才不会把测试整组带崩）。
+   * ============================================================= */
+
+  /* 进化表：min = 需要书数，scale = 体型，gears = 已解锁装备 */
+  var GUARD_STAGES = [
+    { min: 0,  key: 'sleep', name: '沉睡',                scale: 0.4,  gears: [],
+      copy: '每收藏一本书，它就长大一点。第一本书会唤醒它。' },
+    { min: 1,  key: 'baby',  name: '苏醒 · 幼鲸',          scale: 0.42, gears: [],
+      copy: '书架有了第一本书，它开始游动。' },
+    { min: 3,  key: 'grow',  name: '成长',                scale: 0.56, gears: ['trail'],
+      copy: '它认得你了，尾迹拖出了星光。' },
+    { min: 5,  key: 'teen',  name: '少年鲸',              scale: 0.68, gears: ['trail'],
+      copy: '星轨爬上它的背脊。' },
+    { min: 8,  key: 'adult', name: '成年鲸',              scale: 0.82, gears: ['trail'],
+      copy: '它长成了能载动书架的模样。' },
+    { min: 11, key: 'armor', name: '装备 I · 星骨装甲',    scale: 0.9,  gears: ['trail', 'armor'],
+      copy: '第一件装备上身——星骨装甲，冷光沿着脊线亮起。' },
+    { min: 14, key: 'core',  name: '装备 II · 能量核心',   scale: 0.94, gears: ['trail', 'armor', 'core'],
+      copy: '胸腔里点亮了一枚能量核心，每一次呼吸都在蓄能。' },
+    { min: 17, key: 'sats',  name: '装备 III · 环轨卫星',  scale: 0.98, gears: ['trail', 'armor', 'core', 'sats'],
+      copy: '两颗环轨卫星开始绕它巡游。' },
+    { min: 20, key: 'flame', name: '装备 IV · 等离子尾焰', scale: 1.02, gears: ['trail', 'armor', 'core', 'sats', 'flame'],
+      copy: '尾后燃起等离子尾焰，它穿星海如履平地。' },
+    { min: 25, key: 'star',  name: '完全体 · 鲸星',        scale: 1.08, gears: ['trail', 'armor', 'core', 'sats', 'flame', 'halo'],
+      copy: '它已能横渡星海——你的书简，是它的星图。' }
+  ];
+  var GUARD_SHORT = ['幼鲸', '成长', '少年鲸', '成年鲸', '星骨装甲', '能量核心', '环轨卫星', '等离子尾焰', '鲸星'];
+
+  /* 第二阶段：双鲸纪元（31 本起，第二头鲸以完全体为起点继续升级） */
+  var GUARD_STAGES2 = [
+    { min: 31, key: 'd1', name: '双鲸纪元 · Ⅰ',   scale: 0.72, gears: ['trail', 'armor', 'core', 'sats', 'flame', 'halo'],
+      copy: '第二条鲸自星海深处而来——它以完全体为起点。' },
+    { min: 35, key: 'd2', name: '双鲸纪元 · Ⅱ',   scale: 0.78, gears: ['trail', 'armor', 'core', 'sats', 'flame', 'halo', 'warp'],
+      copy: '它展开了第一道时空折跃环。' },
+    { min: 40, key: 'd3', name: '双鲸纪元 · Ⅲ',   scale: 0.84, gears: ['trail', 'armor', 'core', 'sats', 'flame', 'halo', 'warp', 'matrix'],
+      copy: '星核矩阵点亮——三颗星核绕体运转。' },
+    { min: 45, key: 'd4', name: '双鲸纪元 · Ⅳ',   scale: 0.9,  gears: ['trail', 'armor', 'core', 'sats', 'flame', 'halo', 'warp', 'matrix', 'wings'],
+      copy: '银河之翼展开，它带着整片星海游动。' },
+    { min: 50, key: 'd5', name: '鲸群 · 星海之王', scale: 0.96, gears: ['trail', 'armor', 'core', 'sats', 'flame', 'halo', 'warp', 'matrix', 'wings'],
+      copy: '两鲸同游，你的书简已成星图。' }
+  ];
+  var GUARD_SHORT2 = ['双鲸·Ⅰ', '双鲸·Ⅱ', '双鲸·Ⅲ', '双鲸·Ⅳ', '星海之王'];
+  var GEARS_1 = ['trail', 'armor', 'core', 'sats', 'flame', 'halo'];
+  var GEARS_2 = GEARS_1.concat(['warp', 'matrix', 'wings']);
+
+  /* 今日一句：每次打开随机挑一句（不落存储，纯现场随机） */
+  var QUOTES = [
+    { t: '读书是在别人思想的帮助下，建立起自己的思想。', f: '鲁巴金' },
+    { t: '书山有路勤为径，学海无涯苦作舟。',             f: '韩愈' },
+    { t: '问渠那得清如许，为有源头活水来。',             f: '朱熹《观书有感》' },
+    { t: '腹有诗书气自华。',                             f: '苏轼' },
+    { t: '读书破万卷，下笔如有神。',                     f: '杜甫' },
+    { t: '一鲸落，万物生——读过的书，终会成为你的海底山脉。', f: '鲸落书简' }
+  ];
+
+  /* 迷你 DOM 兼容三件套：_ac_test/_d2d_test 的测试桩里
+     classList 没有 toggle、style 没有 setProperty、也没有 createTextNode，
+     真浏览器全都支持——所以统一走这三个安全包装，测试和浏览器都不炸。 */
+  function toggleClass(el, name, on) {
+    if (!el || !el.classList) return;
+    if (typeof el.classList.toggle === 'function') { el.classList.toggle(name, !!on); return; }
+    if (on) { if (typeof el.classList.add === 'function') el.classList.add(name); }
+    else if (typeof el.classList.remove === 'function') el.classList.remove(name);
+  }
+
+  function setVar(el, name, value) {
+    if (!el || !el.style) return;
+    if (typeof el.style.setProperty === 'function') el.style.setProperty(name, value);
+    else { try { el.style[name] = value; } catch (e) { /* 测试桩：忽略 */ } }
+  }
+
+  function metaText(text) {
+    var span = document.createElement('span');
+    span.textContent = text;
+    return span;
+  }
+
+  var codexBuilt = false;
+
+  /* 从书里取三个数：藏书数、在读数、笔记数。
+     ⚠️ store.js 的真实返回形状（别按印象取值）：
+       Store.listBooks()      → { ok:true, data: [书, 书, ...] }   data 本身就是数组
+       Store.countNotes(id)   → { ok:true, data: 数字 }            data 就是条数
+     （Day 20+ 踩过：一开始按 { data:{ books:[...] } } 取，结果永远读到 0 本） */
+  function guardData() {
+    var books = [];
+    if (typeof Store !== 'undefined' && Store && typeof Store.listBooks === 'function') {
+      var res = Store.listBooks();
+      if (res && res.ok && res.data && typeof res.data.length === 'number') books = res.data;
+    }
+    var reading = 0;
+    var notes = 0;
+    for (var i = 0; i < books.length; i++) {
+      if (books[i].status === 'reading') reading++;
+      if (typeof Store !== 'undefined' && Store && typeof Store.countNotes === 'function') {
+        var c = Store.countNotes(books[i].id);
+        if (c && c.ok && typeof c.data === 'number') notes += c.data;
+      }
+    }
+    return { books: books.length, reading: reading, notes: notes };
+  }
+
+  function stageAt(list, count) {
+    var s = list[0];
+    for (var i = 0; i < list.length; i++) { if (count >= list[i].min) s = list[i]; }
+    return s;
+  }
+
+  function nextStageAt(list, count) {
+    for (var i = 0; i < list.length; i++) { if (list[i].min > count) return list[i]; }
+    return null;
+  }
+
+  /* 图鉴骨架：只建一次，之后只改状态 */
+  function buildCodex() {
+    if (codexBuilt) return;
+    var g1 = byId('cx-grid');
+    var g2 = byId('cx-grid2');
+    if (!g1 && !g2) return;         // 迷你 DOM 里没有图鉴，直接跳过
+    if (g1) {
+      for (var i = 1; i < GUARD_STAGES.length; i++) {
+        var t = document.createElement('div');
+        t.className = 'cx-tile';
+        t.setAttribute('data-stage', 'cx-' + GUARD_STAGES[i].key);
+        var b = document.createElement('b');
+        b.textContent = GUARD_SHORT[i - 1];
+        t.appendChild(b);
+        t.appendChild(metaText('需 ' + GUARD_STAGES[i].min + ' 本'));
+        g1.appendChild(t);
+      }
+    }
+    if (g2) {
+      for (var j = 0; j < GUARD_STAGES2.length; j++) {
+        var t2 = document.createElement('div');
+        t2.className = 'cx-tile';
+        t2.setAttribute('data-stage', 'c2-' + GUARD_STAGES2[j].key);
+        var b2 = document.createElement('b');
+        b2.textContent = GUARD_SHORT2[j];
+        t2.appendChild(b2);
+        t2.appendChild(metaText('需 ' + GUARD_STAGES2[j].min + ' 本'));
+        g2.appendChild(t2);
+      }
+    }
+    codexBuilt = true;
+  }
+
+  function renderGuard() {
+    var data = guardData();
+    var n = data.books;
+    var s1 = stageAt(GUARD_STAGES, n);
+    var dual = n >= 31;
+    var s2 = dual ? stageAt(GUARD_STAGES2, n) : null;
+
+    /* ① 面板 */
+    var panel = byId('guard-panel');
+    if (panel) {
+      toggleClass(panel, 'sleep', n === 0);
+      toggleClass(panel, 'dual', dual);
+      var stage = byId('whale-stage');
+      if (stage) {
+        setVar(stage, '--s', n === 0 ? 1 : s1.scale);
+        for (var i = 0; i < GEARS_1.length; i++) {
+          toggleClass(stage, 'g-' + GEARS_1[i], n > 0 && s1.gears.indexOf(GEARS_1[i]) > -1);
+        }
+      }
+      var stage2 = byId('whale-stage2');
+      if (stage2 && dual) {
+        setVar(stage2, '--s2', s2.scale);
+        for (var j = 0; j < GEARS_2.length; j++) {
+          toggleClass(stage2, 'g2-' + GEARS_2[j], s2.gears.indexOf(GEARS_2[j]) > -1);
+        }
+      }
+      var badge = byId('stage-badge');
+      if (badge) badge.textContent = dual ? s2.name : s1.name;
+      var title = byId('guard-title');
+      if (title) title.textContent = n === 0 ? '守护鲸在沉睡' : (dual ? '双鲸纪元' : '你的鲸醒来了');
+      var sub = byId('guard-sub');
+      if (sub) sub.textContent = dual ? s2.copy : s1.copy;
+      var countEl = byId('stage-count');
+      if (countEl) {
+        if (n === 0) {
+          countEl.textContent = '';
+        } else if (dual) {
+          var nx2 = nextStageAt(GUARD_STAGES2, n);
+          countEl.textContent = '已收藏 ' + n + ' 本 · 第二头鲸已入场' +
+            (nx2 ? ' · 距「' + nx2.name + '」还差 ' + (nx2.min - n) + ' 本' : ' · 鲸群已成形');
+        } else {
+          var nx1 = nextStageAt(GUARD_STAGES, n);
+          countEl.textContent = '已收藏 ' + n + ' 本 · ' +
+            (nx1 ? '距「' + nx1.name + '」还差 ' + (nx1.min - n) + ' 本'
+                 : '已至完全体（30 本开启双鲸纪元）');
+        }
+      }
+    }
+
+    /* ② 图鉴 */
+    buildCodex();
+    var tiles = (typeof document.querySelectorAll === 'function') ? document.querySelectorAll('.cx-tile') : [];
+    for (var k = 0; k < tiles.length; k++) {
+      var el = tiles[k];
+      var id = el.getAttribute('data-stage') || '';
+      var def = null;
+      var isTier2 = id.indexOf('c2-') === 0;
+      var key = id.replace(/^c2-/, '').replace(/^cx-/, '');
+      var list = isTier2 ? GUARD_STAGES2 : GUARD_STAGES;
+      for (var m = 0; m < list.length; m++) { if (list[m].key === key) def = list[m]; }
+      if (!def) continue;
+      toggleClass(el, 'on', n >= def.min);
+      toggleClass(el, 'now', isTier2 ? (dual && s2.key === def.key) : (!dual && s1.key === def.key));
+    }
+
+    /* ③ 数据小卡 */
+    var sr = byId('stat-reading');
+    if (sr) sr.textContent = String(data.reading);
+    var sn = byId('stat-notes');
+    if (sn) sn.textContent = String(data.notes);
+    var sb = byId('stat-books');
+    if (sb) sb.textContent = String(data.books);
+  }
+
+  /* 今日一句：每次打开换一句 */
+  function renderQuote() {
+    var el = byId('quote-text');
+    var from = byId('quote-from');
+    if (!el && !from) return;
+    var q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+    if (el) el.textContent = '「' + q.t + '」';
+    if (from) from.textContent = '—— ' + q.f + ' · 每次打开换一句';
+  }
+
+  /* 开场：让整页轻轻一震（只在允许动画时加这个类） */
+  function startOpening() {
+    if (typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    toggleClass(document.body, 'opening-shake', true);
+  }
+
+  /* 把 Store 的写方法包一层：任何书/笔记变动后都重算一次鲸与统计。
+     这样不用改 app.js 的每一处渲染调用，也不漏掉任何一条写入路径。 */
+  function hookStoreMutations() {
+    if (typeof Store === 'undefined' || !Store) return;
+    var names = ['addBook', 'updateBook', 'deleteBook', 'addNote', 'updateNote', 'deleteNote', 'toggleLike'];
+    for (var i = 0; i < names.length; i++) {
+      (function (name) {
+        var orig = Store[name];
+        if (typeof orig !== 'function') return;
+        Store[name] = function () {
+          var out = orig.apply(Store, arguments);
+          setTimeout(renderGuard, 0);   // 等本轮渲染画完再刷
+          return out;
+        };
+      })(names[i]);
+    }
+  }
+
+  function initStarSea() {
+    renderGuard();
+    renderQuote();
+    hookStoreMutations();
+    startOpening();
+  }
+
+  // 对外暴露（自动化测试 _starsea_test.js 用；以后别的模块要读进化表也从这拿）
+  window.StarSea = {
+    render: renderGuard,
+    stages: GUARD_STAGES,
+    stages2: GUARD_STAGES2,
+    data: guardData
+  };
+
   function init() {
     bindNav();
     bindEvents();
     updateNavUser();
+    // Day 20+：星海模块（守护鲸/图鉴/数据卡/今日一句/开场轻震）
+    initStarSea();
     // 按地址栏的 hash 落到对应页面（Day 13）。
     // 参数 true = 启动阶段：不擦掉 app.js 刚设的「存储不可用」等全局告警
     //（Day 12 修复的 bug，别改回去）。

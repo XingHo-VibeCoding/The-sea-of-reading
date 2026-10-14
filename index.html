@@ -13,6 +13,288 @@
 </head>
 <body>
 
+<!-- ============================================================
+     星海背景层（Day 20+ 视觉升级 · 星海鲸落主题）
+     全部为装饰元素：绝对定位 + pointer-events:none，不挡任何交互。
+     ============================================================ -->
+<div class="starfield" aria-hidden="true">
+<div class="nebula n1"></div><div class="nebula n2"></div><div class="nebula n3"></div>
+
+  <!-- 氛围层 -->
+  <div class="ray r1"></div><div class="ray r2"></div><div class="ray r3"></div>
+  <div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div><div class="dot d4"></div>
+  <div class="dot d5"></div><div class="dot d6"></div><div class="dot d7"></div><div class="dot d8"></div>
+  <div class="dot d9"></div><div class="dot d10"></div><div class="dot d11"></div><div class="dot d12"></div>
+  <div class="dot d13"></div><div class="dot d14"></div>
+  <div class="bubble bb1"></div><div class="bubble bb2"></div><div class="bubble bb3"></div><div class="bubble bb4"></div><div class="bubble bb5"></div>
+
+  <!-- 两侧小鲸背景群：7 条梯度编队 -->
+  <div class="mini m1"><div class="bob">
+    <svg width="200" height="87" viewBox="0 0 460 200"><path fill="#3d4a9e" d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/><path fill="#3d4a9e" d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 Z"/></svg>
+  </div></div>
+  <div class="mini m2"><div class="bob">
+    <svg width="170" height="74" viewBox="0 0 460 200"><path fill="#333d85" d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/><path fill="#333d85" d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 Z"/></svg>
+  </div></div>
+  <div class="mini m3"><div class="bob">
+    <svg width="150" height="65" viewBox="0 0 460 200"><path fill="#38428f" d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/><path fill="#38428f" d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 Z"/></svg>
+  </div></div>
+  <div class="mini m4"><div class="bob">
+    <svg width="120" height="52" viewBox="0 0 460 200"><path fill="#2c3574" d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/><path fill="#2c3574" d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 Z"/></svg>
+  </div></div>
+  <div class="mini m5"><div class="bob">
+    <svg width="160" height="70" viewBox="0 0 460 200"><path fill="#414cae" d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/><path fill="#414cae" d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 Z"/></svg>
+  </div></div>
+  <div class="mini m6"><div class="bob">
+    <svg width="130" height="57" viewBox="0 0 460 200"><path fill="#363f8a" d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/><path fill="#363f8a" d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 Z"/></svg>
+  </div></div>
+  <div class="mini m7"><div class="bob">
+    <svg width="95" height="41" viewBox="0 0 460 200"><path fill="#303878" d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/><path fill="#303878" d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 Z"/></svg>
+  </div></div>
+
+  <!-- 上浮的信笺 -->
+  <div class="letter lt1">
+    <svg width="44" height="32" viewBox="0 0 44 32"><rect x="2" y="2" width="40" height="28" rx="4" fill="rgba(255,209,102,.16)" stroke="rgba(255,209,102,.75)" stroke-width="1.6"/><path d="M3 4 L22 18 L41 4" fill="none" stroke="rgba(255,209,102,.75)" stroke-width="1.6"/></svg>
+  </div>
+  <div class="letter lt2">
+    <svg width="34" height="25" viewBox="0 0 44 32"><rect x="2" y="2" width="40" height="28" rx="4" fill="rgba(140,150,255,.12)" stroke="rgba(160,170,255,.6)" stroke-width="1.6"/><path d="M3 4 L22 18 L41 4" fill="none" stroke="rgba(160,170,255,.6)" stroke-width="1.6"/></svg>
+  </div>
+  <div class="letter lt3">
+    <svg width="26" height="19" viewBox="0 0 44 32"><rect x="2" y="2" width="40" height="28" rx="4" fill="rgba(255,209,102,.1)" stroke="rgba(255,209,102,.5)" stroke-width="1.6"/><path d="M3 4 L22 18 L41 4" fill="none" stroke="rgba(255,209,102,.5)" stroke-width="1.6"/></svg>
+  </div>
+
+</div>
+
+<!-- ============================================================
+     开场四幕动画（只播一次，之后由巡游鲸接管）
+     1 迎面逼近（距离涟漪）2 贴身掠过（冲击波/水雾/轻震）
+     3 小鲸跃水化竹简 4 巡游鲸溶解融入背景
+     ============================================================ -->
+<div class="opening" aria-hidden="true">
+  <!-- 距离涟漪（三圈，标记「正在拉近」） -->
+  <div class="ripple rp1"></div>
+  <div class="ripple rp2"></div>
+  <div class="ripple rp3"></div>
+
+  <!-- 发光弧环 -->
+  <div class="arc-ring">
+    <svg width="420" height="420" viewBox="0 0 420 420">
+      <circle cx="210" cy="210" r="196" fill="none" stroke="rgba(150,160,255,.5)" stroke-width="1.6"
+        stroke-dasharray="640 320" stroke-linecap="round"/>
+      <circle cx="210" cy="210" r="172" fill="none" stroke="rgba(120,130,235,.3)" stroke-width="1"
+        stroke-dasharray="180 620" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="arc-ring a2">
+    <svg width="560" height="560" viewBox="0 0 560 560">
+      <circle cx="280" cy="280" r="258" fill="none" stroke="rgba(130,140,255,.35)" stroke-width="1.2"
+        stroke-dasharray="420 900" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  <!-- 阶段一/二：迎面逼近 → 贴身掠过 -->
+  <div class="whale-front">
+    <svg class="whale-svg" width="300" height="380" viewBox="0 0 300 380">
+      <defs>
+        <radialGradient id="frontGrad" cx=".5" cy=".26" r=".95">
+          <stop offset="0"   stop-color="#5a68d8"/>
+          <stop offset=".35" stop-color="#3a4398"/>
+          <stop offset=".7"  stop-color="#232c68"/>
+          <stop offset="1"   stop-color="#141a45"/>
+        </radialGradient>
+        <linearGradient id="flipGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#28307a"/>
+          <stop offset="1" stop-color="#4550b8"/>
+        </linearGradient>
+        <radialGradient id="headSheen" cx=".5" cy="1" r=".7">
+          <stop offset="0" stop-color="#c3caff" stop-opacity=".32"/>
+          <stop offset="1" stop-color="#c3caff" stop-opacity="0"/>
+        </radialGradient>
+        <clipPath id="frontClip">
+          <path d="M147 138 C104 160 58 214 46 276 C38 324 82 360 150 362 C218 360 262 324 254 276 C242 214 196 160 153 138 Z"/>
+        </clipPath>
+      </defs>
+
+      <g class="f-body">
+        <path d="M147 138 C104 160 58 214 46 276 C38 324 82 360 150 362 C218 360 262 324 254 276 C242 214 196 160 153 138 Z"
+              fill="url(#frontGrad)" stroke="rgba(190,200,255,.35)" stroke-width="2.2"/>
+        <!-- 皮肤里透出的星星 + 小星座 -->
+        <g clip-path="url(#frontClip)">
+          <circle class="f-star" cx="120" cy="200" r="2.2" fill="#ffffff" opacity=".8"/>
+          <circle class="f-star" cx="185" cy="230" r="1.6" fill="#cfc9ff" opacity=".7" style="animation-delay:.8s;"/>
+          <circle class="f-star" cx="95"  cy="265" r="1.8" fill="#ffffff" opacity=".6" style="animation-delay:1.5s;"/>
+          <circle class="f-star" cx="210" cy="290" r="2.4" fill="#dcd6ff" opacity=".75" style="animation-delay:2.1s;"/>
+          <circle class="f-star" cx="150" cy="245" r="1.4" fill="#ffffff" opacity=".65" style="animation-delay:.4s;"/>
+          <circle class="f-star" cx="70"  cy="300" r="1.5" fill="#cfc9ff" opacity=".6" style="animation-delay:2.6s;"/>
+          <circle class="f-star" cx="235" cy="330" r="1.8" fill="#ffffff" opacity=".7" style="animation-delay:1.1s;"/>
+          <circle class="f-star" cx="170" cy="320" r="1.3" fill="#dcd6ff" opacity=".6" style="animation-delay:2.9s;"/>
+          <circle class="f-star" cx="112" cy="330" r="1.6" fill="#ffffff" opacity=".55" style="animation-delay:1.9s;"/>
+          <polyline points="96,225 128,258 160,242 196,272" fill="none" stroke="rgba(210,215,255,.28)" stroke-width="1"/>
+          <circle cx="96" cy="225" r="1.8" fill="#e6e9ff" opacity=".8"/>
+          <circle cx="128" cy="258" r="1.8" fill="#e6e9ff" opacity=".8"/>
+          <circle cx="160" cy="242" r="1.8" fill="#e6e9ff" opacity=".8"/>
+          <circle cx="196" cy="272" r="1.8" fill="#e6e9ff" opacity=".8"/>
+          <ellipse cx="120" cy="270" rx="46" ry="26" fill="rgba(150,140,255,.14)"/>
+          <ellipse cx="195" cy="310" rx="40" ry="22" fill="rgba(90,170,240,.12)"/>
+        </g>
+
+        <!-- 轮廓光 -->
+        <path d="M147 138 C104 160 58 214 46 276 C43 302 52 328 74 344" stroke="rgba(190,200,255,.55)" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M153 138 C196 160 242 214 254 276 C257 302 248 328 226 344" stroke="rgba(190,200,255,.55)" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M150 142 C110 165 66 216 55 272" stroke="rgba(225,228,255,.25)" stroke-width="6" fill="none" stroke-linecap="round" opacity=".5"/>
+        <path d="M150 150 C146 200 144 260 146 330" stroke="rgba(205,210,255,.3)" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+        <ellipse cx="108" cy="212" rx="16" ry="7" fill="#1a2158" opacity=".4" transform="rotate(-18 108 212)"/>
+        <ellipse cx="192" cy="212" rx="16" ry="7" fill="#1a2158" opacity=".4" transform="rotate(18 192 212)"/>
+        <ellipse cx="86"  cy="266" rx="13" ry="6" fill="#1a2158" opacity=".35" transform="rotate(-24 86 266)"/>
+        <ellipse cx="214" cy="266" rx="13" ry="6" fill="#1a2158" opacity=".35" transform="rotate(24 214 266)"/>
+
+        <path d="M128 350 C132 336 135 322 136 308" stroke="rgba(14,18,58,.4)" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+        <path d="M142 354 C145 338 147 322 148 306" stroke="rgba(14,18,58,.34)" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+        <path d="M158 354 C155 338 153 322 152 306" stroke="rgba(14,18,58,.34)" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+        <path d="M172 350 C168 336 165 322 164 308" stroke="rgba(14,18,58,.4)" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+
+        <ellipse cx="141" cy="336" rx="7" ry="3.4" fill="#0d1240" transform="rotate(-8 141 336)"/>
+        <ellipse cx="159" cy="336" rx="7" ry="3.4" fill="#0d1240" transform="rotate(8 159 336)"/>
+        <path d="M128 332 Q150 344 172 332" stroke="rgba(14,18,58,.45)" stroke-width="2.4" fill="none"/>
+
+        <circle cx="97" cy="322" r="5" fill="#0a0e30"/>
+        <circle cx="95.4" cy="320.4" r="1.6" fill="#e8ecff" opacity=".9"/>
+        <circle cx="203" cy="322" r="5" fill="#0a0e30"/>
+        <circle cx="201.4" cy="320.4" r="1.6" fill="#e8ecff" opacity=".9"/>
+        <path d="M88 314 Q97 309.5 106 314" stroke="rgba(14,18,58,.45)" stroke-width="2" fill="none"/>
+        <path d="M194 314 Q203 309.5 212 314" stroke="rgba(14,18,58,.45)" stroke-width="2" fill="none"/>
+
+        <ellipse cx="150" cy="352" rx="70" ry="16" fill="url(#headSheen)"/>
+
+        <g clip-path="url(#frontClip)">
+          <rect class="f-sweep" x="20" y="120" width="260" height="70" fill="rgba(195,200,255,.15)"/>
+        </g>
+
+        <g class="f-fin-l">
+          <path d="M78 240 C40 258 8 300 12 348 C46 336 80 302 96 264 C92 252 86 244 78 240 Z"
+                fill="url(#flipGrad)" stroke="rgba(190,200,255,.3)" stroke-width="1.6"/>
+          <path d="M82 252 C52 272 32 304 24 336" stroke="rgba(215,218,255,.22)" stroke-width="2" fill="none"/>
+        </g>
+        <g class="f-fin-r">
+          <path d="M222 240 C260 258 292 300 288 348 C254 336 220 302 204 264 C208 252 214 244 222 240 Z"
+                fill="url(#flipGrad)" stroke="rgba(190,200,255,.3)" stroke-width="1.6"/>
+          <path d="M218 252 C248 272 268 304 276 336" stroke="rgba(215,218,255,.22)" stroke-width="2" fill="none"/>
+        </g>
+      </g>
+
+      <g class="f-tail">
+        <path d="M150 132 C116 96 66 78 40 90 C64 106 100 122 132 140 Z"
+              fill="url(#flipGrad)" stroke="rgba(190,200,255,.3)" stroke-width="1.6"/>
+        <path d="M150 132 C184 96 234 78 260 90 C236 106 200 122 168 140 Z"
+              fill="url(#flipGrad)" stroke="rgba(190,200,255,.3)" stroke-width="1.6"/>
+        <path d="M141 100 C144 118 146 128 147 140 L153 140 C154 128 156 118 159 100 Z" fill="#2b3578"/>
+      </g>
+    </svg>
+  </div>
+
+  <!-- 阶段二：掠过的水幕 + 冲击波 + 速度线 + 飞沫 -->
+  <div class="veil"></div>
+  <div class="shockwave"></div>
+  <div class="shockwave s2"></div>
+  <div class="burst"></div>
+  <div class="spray">
+    <i class="sp1"></i><i class="sp2"></i><i class="sp3"></i><i class="sp4"></i><i class="sp5"></i><i class="sp6"></i>
+  </div>
+
+  <!-- 阶段三 v7：多条小鲸错峰跃水，下落渐变成竹简（鲸字 logo），落水变回鲸形游走 -->
+  <div class="perf" style="--x:6vw;  --h:36vh; --d:4.40s; --sw:1;">
+    <div class="p-jump">
+      <svg class="p-whale" width="92" height="40" viewBox="0 0 460 200"><path fill="#3d4a9e" stroke="rgba(190,200,255,.4)" stroke-width="6" d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/><path fill="#3d4a9e" stroke="rgba(190,200,255,.4)" stroke-width="6" d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 Z"/></svg>
+      <div class="p-slip"><span>鲸</span></div>
+    </div>
+    <div class="p-splash"><i></i><i></i></div>
+    <div class="p-swim"><svg width="96" height="42" viewBox="0 0 460 200"><path fill="#3d4a9e" d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/><path fill="#3d4a9e" d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 Z"/></svg></div>
+  </div>
+  <div class="perf swim-left" style="--x:22vw; --h:44vh; --d:4.62s; --sw:-1;">
+    <div class="p-jump">
+      <svg class="p-whale" width="104" height="45" viewBox="0 0 460 200"><path fill="#4553ab" stroke="rgba(190,200,255,.4)" stroke-width="6" d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/><path fill="#4553ab" stroke="rgba(190,200,255,.4)" stroke-width="6" d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 Z"/></svg>
+      <div class="p-slip"><span>落</span></div>
+    </div>
+    <div class="p-splash"><i></i><i></i></div>
+    <div class="p-swim"><svg width="104" height="45" viewBox="0 0 460 200"><path fill="#4553ab" d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/><path fill="#4553ab" d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 Z"/></svg></div>
+  </div>
+  <div class="perf" style="--x:40vw; --h:52vh; --d:4.84s; --sw:1;">
+    <div class="p-jump">
+      <svg class="p-whale" width="112" height="49" viewBox="0 0 460 200"><path fill="#4d5cc0" stroke="rgba(190,200,255,.45)" stroke-width="6" d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/><path fill="#4d5cc0" stroke="rgba(190,200,255,.45)" stroke-width="6" d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 Z"/></svg>
+      <div class="p-slip"><span>书</span></div>
+    </div>
+    <div class="p-splash"><i></i><i></i></div>
+    <div class="p-swim"><svg width="112" height="49" viewBox="0 0 460 200"><path fill="#4d5cc0" d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/><path fill="#4d5cc0" d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 Z"/></svg></div>
+  </div>
+  <div class="perf swim-left" style="--x:58vw; --h:44vh; --d:5.06s; --sw:-1;">
+    <div class="p-jump">
+      <svg class="p-whale" width="104" height="45" viewBox="0 0 460 200"><path fill="#4553ab" stroke="rgba(190,200,255,.4)" stroke-width="6" d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/><path fill="#4553ab" stroke="rgba(190,200,255,.4)" stroke-width="6" d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 Z"/></svg>
+      <div class="p-slip"><span>简</span></div>
+    </div>
+    <div class="p-splash"><i></i><i></i></div>
+    <div class="p-swim"><svg width="104" height="45" viewBox="0 0 460 200"><path fill="#4553ab" d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/><path fill="#4553ab" d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 Z"/></svg></div>
+  </div>
+  <div class="perf" style="--x:76vw; --h:36vh; --d:5.28s; --sw:1;">
+    <div class="p-jump">
+      <svg class="p-whale" width="92" height="40" viewBox="0 0 460 200"><path fill="#3d4a9e" stroke="rgba(190,200,255,.4)" stroke-width="6" d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/><path fill="#3d4a9e" stroke="rgba(190,200,255,.4)" stroke-width="6" d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 Z"/></svg>
+      <div class="p-slip"><span>鲸</span></div>
+    </div>
+    <div class="p-splash"><i></i><i></i></div>
+    <div class="p-swim"><svg width="96" height="42" viewBox="0 0 460 200"><path fill="#3d4a9e" d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/><path fill="#3d4a9e" d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 Z"/></svg></div>
+  </div>
+
+  <!-- 阶段四：巡游鲸（右进左出，每圈溶解融入背景） -->
+  <div class="whale-cruise">
+    <svg class="whale-svg" width="300" height="130" viewBox="0 0 460 200">
+      <defs>
+        <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0"   stop-color="#222b6e"/>
+          <stop offset=".45" stop-color="#303c92"/>
+          <stop offset=".78" stop-color="#4d5cc0"/>
+          <stop offset="1"   stop-color="#8b95d9"/>
+        </linearGradient>
+        <linearGradient id="finGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#1d2560"/>
+          <stop offset="1" stop-color="#3a45a5"/>
+        </linearGradient>
+        <clipPath id="whaleClip">
+          <path d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C292 100 248 112 196 112 C124 110 44 136 16 108 Z"/>
+        </clipPath>
+      </defs>
+      <g class="w-body">
+        <path fill="url(#bodyGrad)" stroke="rgba(190,200,255,.3)" stroke-width="2"
+          d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/>
+        <ellipse cx="140" cy="60" rx="26" ry="10" fill="#161c4e" opacity=".4"/>
+        <ellipse cx="230" cy="64" rx="22" ry="8" fill="#161c4e" opacity=".35"/>
+        <ellipse cx="180" cy="100" rx="28" ry="8" fill="#c9cef0" opacity=".14"/>
+        <path d="M40 106 C70 118 110 124 150 124" stroke="rgba(14,18,58,.4)" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M20 100 C60 112 110 118 158 118" stroke="rgba(14,18,58,.5)" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <circle cx="56" cy="78" r="5" fill="#0a0e30"/>
+        <circle cx="54.5" cy="76.5" r="1.6" fill="#e8ecff" opacity=".85"/>
+        <path d="M16 108 C42 62 118 40 196 46 C240 49 275 56 300 64" stroke="rgba(195,202,255,.4)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <g clip-path="url(#whaleClip)">
+          <circle class="w-star" cx="90" cy="70" r="2" fill="#ffffff" opacity=".8"/>
+          <circle class="w-star" cx="170" cy="58" r="1.5" fill="#dcd6ff" opacity=".7" style="animation-delay:1.2s;"/>
+          <circle class="w-star" cx="240" cy="80" r="1.8" fill="#ffffff" opacity=".7" style="animation-delay:2.3s;"/>
+          <rect x="60" y="20" width="150" height="140" fill="rgba(195,200,255,.1)">
+            <animate attributeName="x" from="-160" to="460" dur="11s" repeatCount="indefinite"/>
+          </rect>
+        </g>
+      </g>
+      <g class="w-fin">
+        <path fill="url(#finGrad)" stroke="rgba(190,200,255,.28)" stroke-width="1.6"
+          d="M170 96 C190 122 224 142 262 148 C236 152 198 142 172 118 C162 108 162 100 170 96 Z"/>
+      </g>
+      <g class="w-tail">
+        <path fill="url(#bodyGrad)" stroke="rgba(190,200,255,.28)" stroke-width="2"
+          d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 C310 78 311 68 308 58 Z"/>
+      </g>
+    </svg>
+  </div>
+
+</div>
+
+
 <!-- 出错提示条：任何一步操作失败都在这里显示（TECH_DESIGN 3.4 / PRD AC-23） -->
 <div id="app-error" class="app-error" hidden></div>
 <!-- 成功提示条：注册/登录成功等正向反馈（Day 11 Step 3 新增），几秒后自动消失 -->
@@ -55,6 +337,202 @@
        ============================================================ -->
   <section id="view-list" class="view">
 
+    <!-- ============================================================
+         守护鲸面板（Day 20+ 新增）
+         书架里有几本书，鲸就进化到什么形态：0 本沉睡 → 1 本苏醒 →
+         完全体 · 鲸星（25 本）→ 30 本为第一阶段终点 → 31 本第二头鲸入场
+         继续升级（双鲸纪元）。形态表在 community.js 的 GUARD_STAGES。
+         只读展示：加书入口仍走顶部「添加书籍」和空态按钮，这里不放按钮。
+         ============================================================ -->
+    <section class="guard sleep" id="guard-panel">
+      <div class="g-deco d1"><svg width="150" height="65" viewBox="0 0 460 200"><path fill="#2f3a86" d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/><path fill="#2f3a86" d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 Z"/></svg></div>
+      <div class="g-deco d2"><svg width="104" height="45" viewBox="0 0 460 200"><path fill="#28307a" d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/><path fill="#28307a" d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 Z"/></svg></div>
+      <div class="g-whale">
+        <div class="stage-badge" id="stage-badge">沉睡</div>
+        <div class="g-canvas">
+          <svg class="whale-line" width="150" height="82" viewBox="0 0 460 200" style="opacity:.9;">
+            <path fill="none" stroke="rgba(160,170,255,.6)" stroke-width="6"
+              d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 L352 24 C347 44 347 62 353 82 L380 112 C358 100 336 88 316 86 C292 100 248 112 196 112 C124 110 44 136 16 108 Z"/>
+          </svg>
+          <div class="whale-stage" id="whale-stage">
+            <svg width="280" height="122" viewBox="0 0 460 200" class="stage-svg">
+            <defs>
+              <linearGradient id="aliveGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#2b3585"/>
+                <stop offset=".55" stop-color="#3f4cb8"/>
+                <stop offset="1" stop-color="#8b95d9"/>
+              </linearGradient>
+              <linearGradient id="armorGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#dbe6ff"/>
+                <stop offset="1" stop-color="#6f83d8"/>
+              </linearGradient>
+              <linearGradient id="flameGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#7fe3ff" stop-opacity=".85"/>
+                <stop offset=".5" stop-color="#9f8bff" stop-opacity=".5"/>
+                <stop offset="1" stop-color="#9f8bff" stop-opacity="0"/>
+              </linearGradient>
+              <clipPath id="aliveClip">
+                <path d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C292 100 248 112 196 112 C124 110 44 136 16 108 Z"/>
+              </clipPath>
+            </defs>
+
+            <!-- 装备 III：环轨卫星（两颗绕鲸巡游） -->
+            <g class="gear" id="g-sats">
+              <g class="sat-orbit">
+                <circle cx="230" cy="18" r="4.5" fill="#a8ecff"/>
+                <circle cx="230" cy="18" r="9" fill="none" stroke="rgba(160,230,255,.55)" stroke-width="1.2"/>
+              </g>
+              <g class="sat-orbit" style="animation-delay:-4.5s;">
+                <circle cx="230" cy="182" r="3.5" fill="#c9b8ff"/>
+                <circle cx="230" cy="182" r="7" fill="none" stroke="rgba(180,160,255,.5)" stroke-width="1.2"/>
+              </g>
+            </g>
+
+            <g class="a-body">
+              <path fill="url(#aliveGrad)" stroke="rgba(190,200,255,.5)" stroke-width="2.5"
+                d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/>
+              <g clip-path="url(#aliveClip)">
+                <circle class="a-star" cx="90" cy="70" r="2.4" fill="#ffffff" opacity=".9"/>
+                <circle class="a-star" cx="170" cy="58" r="1.8" fill="#dcd6ff" opacity=".8" style="animation-delay:.9s;"/>
+                <circle class="a-star" cx="240" cy="80" r="2.2" fill="#ffffff" opacity=".8" style="animation-delay:1.8s;"/>
+                <circle class="a-star" cx="130" cy="95" r="1.6" fill="#cfc9ff" opacity=".7" style="animation-delay:2.4s;"/>
+                <ellipse cx="150" cy="80" rx="60" ry="26" fill="rgba(150,140,255,.18)"/>
+              </g>
+              <path d="M16 108 C42 62 118 40 196 46 C240 49 275 56 300 64" stroke="rgba(205,212,255,.55)" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <circle cx="56" cy="78" r="5" fill="#0a0e30"/>
+              <circle cx="54.5" cy="76.5" r="1.6" fill="#e8ecff" opacity=".9"/>
+            </g>
+
+            <g class="a-tail">
+              <path fill="url(#aliveGrad)" stroke="rgba(190,200,255,.5)" stroke-width="2.5"
+                d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 C310 78 311 68 308 58 Z"/>
+            </g>
+
+            <!-- 成长阶段：尾迹光带 -->
+            <g class="gear" id="g-trail">
+              <path d="M332 98 C382 94 420 88 452 80 C420 102 380 112 338 112 Z" fill="rgba(150,170,255,.28)"/>
+            </g>
+
+            <!-- 装备 I：星骨装甲（沿背脊的装甲片） -->
+            <g class="gear" id="g-armor">
+              <path d="M104 62 L136 52 L150 64 L118 74 Z" fill="url(#armorGrad)" stroke="rgba(200,230,255,.75)" stroke-width="1.4" opacity=".9"/>
+              <path d="M150 50 L186 42 L198 54 L162 62 Z" fill="url(#armorGrad)" stroke="rgba(200,230,255,.75)" stroke-width="1.4" opacity=".9"/>
+              <path d="M198 54 L236 52 L246 64 L208 66 Z" fill="url(#armorGrad)" stroke="rgba(200,230,255,.75)" stroke-width="1.4" opacity=".9"/>
+              <path d="M246 64 L282 66 L288 78 L252 76 Z" fill="url(#armorGrad)" stroke="rgba(200,230,255,.75)" stroke-width="1.4" opacity=".9"/>
+              <path d="M100 66 C130 50 190 38 250 50" stroke="rgba(120,220,255,.55)" stroke-width="2" fill="none" stroke-linecap="round"/>
+            </g>
+
+            <!-- 装备 II：能量核心（胸腔脉冲光核） -->
+            <g class="gear" id="g-core">
+              <circle cx="132" cy="84" r="15" fill="rgba(90,200,255,.16)"/>
+              <circle class="core-pulse" cx="132" cy="84" r="9" fill="#7fe3ff"/>
+              <circle cx="132" cy="84" r="12.5" fill="none" stroke="rgba(160,235,255,.85)" stroke-width="1.6"/>
+            </g>
+
+            <!-- 装备 IV：等离子尾焰 -->
+            <g class="gear" id="g-flame">
+              <path class="flame" d="M380 90 C412 94 434 102 452 110 L412 118 C400 124 386 118 380 112 Z" fill="url(#flameGrad)"/>
+            </g>
+
+            <!-- 完全体：全息光环 -->
+            <g class="gear" id="g-halo">
+              <ellipse class="halo-ring" cx="230" cy="100" rx="204" ry="54" fill="none"
+                stroke="rgba(165,185,255,.55)" stroke-width="1.8" stroke-dasharray="28 16"/>
+            </g>
+          </svg>
+          </div>
+          <div class="whale-stage2" id="whale-stage2">
+            <svg width="280" height="122" viewBox="0 0 460 200" class="stage-svg">
+            
+            <!-- 装备 III：环轨卫星（两颗绕鲸巡游） -->
+            <g class="gear2" id="g2-sats">
+              <g class="sat-orbit">
+                <circle cx="230" cy="18" r="4.5" fill="#a8ecff"/>
+                <circle cx="230" cy="18" r="9" fill="none" stroke="rgba(160,230,255,.55)" stroke-width="1.2"/>
+              </g>
+              <g class="sat-orbit" style="animation-delay:-4.5s;">
+                <circle cx="230" cy="182" r="3.5" fill="#c9b8ff"/>
+                <circle cx="230" cy="182" r="7" fill="none" stroke="rgba(180,160,255,.5)" stroke-width="1.2"/>
+              </g>
+            </g>
+
+            <g class="a-body">
+              <path fill="url(#aliveGrad)" stroke="rgba(190,200,255,.5)" stroke-width="2.5"
+                d="M16 108 C42 62 118 40 196 46 C252 50 292 60 318 68 C300 84 274 96 240 103 C210 109 170 112 138 110 C96 107 44 132 16 108 Z"/>
+              <g clip-path="url(#aliveClip)">
+                <circle class="a-star" cx="90" cy="70" r="2.4" fill="#ffffff" opacity=".9"/>
+                <circle class="a-star" cx="170" cy="58" r="1.8" fill="#dcd6ff" opacity=".8" style="animation-delay:.9s;"/>
+                <circle class="a-star" cx="240" cy="80" r="2.2" fill="#ffffff" opacity=".8" style="animation-delay:1.8s;"/>
+                <circle class="a-star" cx="130" cy="95" r="1.6" fill="#cfc9ff" opacity=".7" style="animation-delay:2.4s;"/>
+                <ellipse cx="150" cy="80" rx="60" ry="26" fill="rgba(150,140,255,.18)"/>
+              </g>
+              <path d="M16 108 C42 62 118 40 196 46 C240 49 275 56 300 64" stroke="rgba(205,212,255,.55)" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <circle cx="56" cy="78" r="5" fill="#0a0e30"/>
+              <circle cx="54.5" cy="76.5" r="1.6" fill="#e8ecff" opacity=".9"/>
+            </g>
+
+            <g class="a-tail">
+              <path fill="url(#aliveGrad)" stroke="rgba(190,200,255,.5)" stroke-width="2.5"
+                d="M308 58 L350 18 C344 40 344 62 351 82 L380 114 C356 100 330 90 306 86 C310 78 311 68 308 58 Z"/>
+            </g>
+
+            <!-- 成长阶段：尾迹光带 -->
+            <g class="gear2" id="g2-trail">
+              <path d="M332 98 C382 94 420 88 452 80 C420 102 380 112 338 112 Z" fill="rgba(150,170,255,.28)"/>
+            </g>
+
+            <!-- 装备 I：星骨装甲（沿背脊的装甲片） -->
+            <g class="gear2" id="g2-armor">
+              <path d="M104 62 L136 52 L150 64 L118 74 Z" fill="url(#armorGrad)" stroke="rgba(200,230,255,.75)" stroke-width="1.4" opacity=".9"/>
+              <path d="M150 50 L186 42 L198 54 L162 62 Z" fill="url(#armorGrad)" stroke="rgba(200,230,255,.75)" stroke-width="1.4" opacity=".9"/>
+              <path d="M198 54 L236 52 L246 64 L208 66 Z" fill="url(#armorGrad)" stroke="rgba(200,230,255,.75)" stroke-width="1.4" opacity=".9"/>
+              <path d="M246 64 L282 66 L288 78 L252 76 Z" fill="url(#armorGrad)" stroke="rgba(200,230,255,.75)" stroke-width="1.4" opacity=".9"/>
+              <path d="M100 66 C130 50 190 38 250 50" stroke="rgba(120,220,255,.55)" stroke-width="2" fill="none" stroke-linecap="round"/>
+            </g>
+
+            <!-- 装备 II：能量核心（胸腔脉冲光核） -->
+            <g class="gear2" id="g2-core">
+              <circle cx="132" cy="84" r="15" fill="rgba(90,200,255,.16)"/>
+              <circle class="core-pulse" cx="132" cy="84" r="9" fill="#7fe3ff"/>
+              <circle cx="132" cy="84" r="12.5" fill="none" stroke="rgba(160,235,255,.85)" stroke-width="1.6"/>
+            </g>
+
+            <!-- 装备 IV：等离子尾焰 -->
+            <g class="gear2" id="g2-flame">
+              <path class="flame" d="M380 90 C412 94 434 102 452 110 L412 118 C400 124 386 118 380 112 Z" fill="url(#flameGrad)"/>
+            </g>
+
+            <!-- 完全体：全息光环 -->
+            <g class="gear2" id="g2-halo">
+              <ellipse class="halo-ring" cx="230" cy="100" rx="204" ry="54" fill="none"
+                stroke="rgba(165,185,255,.55)" stroke-width="1.8" stroke-dasharray="28 16"/>
+            </g>
+                      <!-- 双鲸纪元装备：时空折跃环 / 星核矩阵 / 银河之翼 -->
+            <g class="gear2" id="g2-warp">
+              <ellipse class="halo-ring" cx="230" cy="100" rx="232" ry="74" fill="none" stroke="rgba(140,220,255,.6)" stroke-width="2" stroke-dasharray="60 30"/>
+              <ellipse class="halo-ring" style="animation-duration:16s; animation-direction:reverse;" cx="230" cy="100" rx="198" ry="62" fill="none" stroke="rgba(190,170,255,.5)" stroke-width="1.4" stroke-dasharray="18 26"/>
+            </g>
+            <g class="gear2" id="g2-matrix">
+              <circle class="core-pulse" cx="230" cy="44" r="5" fill="#a8ecff"/>
+              <circle class="core-pulse" style="animation-delay:.5s;" cx="92" cy="142" r="4.5" fill="#c9b8ff"/>
+              <circle class="core-pulse" style="animation-delay:1s;" cx="356" cy="134" r="4.5" fill="#9fe8ff"/>
+              <path d="M230 44 L92 142 L356 134 Z" fill="none" stroke="rgba(170,200,255,.35)" stroke-width="1.2"/>
+            </g>
+            <g class="gear2" id="g2-wings">
+              <path d="M150 70 C96 40 40 34 8 46 C46 62 96 82 140 92 Z" fill="rgba(150,170,255,.22)" stroke="rgba(180,200,255,.45)" stroke-width="1.2"/>
+              <path d="M300 76 C356 46 414 40 446 54 C410 70 358 90 310 98 Z" fill="rgba(150,170,255,.22)" stroke="rgba(180,200,255,.45)" stroke-width="1.2"/>
+            </g>
+          </svg>
+          </div>
+        </div>
+      </div>
+      <div class="guard-info">
+        <h3 id="guard-title">守护鲸在沉睡</h3>
+        <p id="guard-sub">每收藏一本书，它就长大一点。第一本书会唤醒它。</p>
+        <p class="stage-count" id="stage-count"></p>
+      </div>
+    </section>
+
     <header class="topbar">
       <div>
         <h1>鲸落书简</h1>
@@ -87,6 +565,30 @@
     <div id="filter-empty" class="empty" hidden>
       <p id="filter-empty-text" class="empty-title"></p>
       <button id="btn-show-all" class="btn btn-primary" type="button">看全部</button>
+    </div>
+
+    <!-- 数据小卡（新增）：全部由 store.js 的真实数据算出 -->
+    <div class="stats">
+      <div class="glass stat"><div class="s-ic s1">
+          <svg width="18" height="18" viewBox="0 0 20 20"><path d="M3 4 Q6 2.5 10 4 T17 4 V16 Q14 17.5 10 16 T3 16 Z" fill="none" stroke="#4fd8c5" stroke-width="1.8"/></svg>
+        </div><div><b id="stat-reading">0</b><span>在读的书</span></div></div>
+      <div class="glass stat"><div class="s-ic s2">
+          <svg width="18" height="18" viewBox="0 0 44 32"><rect x="2" y="2" width="40" height="28" rx="4" fill="none" stroke="#7aa0ff" stroke-width="3"/><path d="M3 4 L22 18 L41 4" fill="none" stroke="#7aa0ff" stroke-width="3"/></svg>
+        </div><div><b id="stat-notes">0</b><span>写下的书简</span></div></div>
+      <div class="glass stat"><div class="s-ic s3">
+          <svg width="18" height="18" viewBox="0 0 20 20"><path d="M10 2 L12.4 7.2 L18 7.8 L13.8 11.5 L15 17 L10 14.2 L5 17 L6.2 11.5 L2 7.8 L7.6 7.2 Z" fill="#ffd166"/></svg>
+        </div><div><b id="stat-books">0</b><span>书架藏书</span></div></div>
+    </div>
+
+    <!-- 今日一句（新增）：每次进首页换一句读书名言 -->
+    <div class="glass quote" id="home-quote">
+      <div class="q-ic">
+        <svg width="20" height="20" viewBox="0 0 20 20"><path d="M10 2 L12 7 L17 7 L13 10.5 L14.5 16 L10 12.8 L5.5 16 L7 10.5 L3 7 L8 7 Z" fill="#0d1030"/></svg>
+      </div>
+      <div class="q-txt">
+        <b id="quote-text">读书是在别人思想的帮助下，建立起自己的思想。</b>
+        <span id="quote-from">—— 每日一句 · 每次打开换一句</span>
+      </div>
     </div>
 
   </section>
@@ -253,6 +755,20 @@
        ============================================================ -->
   <section id="view-me" class="view" hidden>
     <div id="me-content"></div>
+
+    <!-- ============================================================
+         守护鲸 · 形态图鉴（Day 20+ 新增，我的页）
+         两段成就墙：一段 1~30 本（幼鲸→鲸星），二段 31 本起（双鲸纪元）。
+         点亮逻辑在 community.js，与首页面板共用同一张形态表。
+         ============================================================ -->
+    <section class="glass codex" id="codex">
+      <h3>守护鲸 · 形态图鉴</h3>
+      <p class="cx-sub">每一次进化都留在这里——已解锁的亮着，未解锁的等你去读。</p>
+      <div class="cx-grid" id="cx-grid"></div>
+      <p class="cx-sub cx-sub2">双鲸纪元（31 本起）</p>
+      <div class="cx-grid" id="cx-grid2"></div>
+    </section>
+
   </section>
 
   <!-- ============================================================
